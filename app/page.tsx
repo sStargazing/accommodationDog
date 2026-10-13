@@ -1,63 +1,162 @@
-import { Camera, PenLine, Share2 } from "lucide-react";
+import { SearchX } from "lucide-react";
+import Link from "next/link";
+import { Suspense } from "react";
+import { FavouritesProvider } from "@/components/listings/favourite-button";
+import { LISTING_GRID_CLASS, ListingCard, ListingCardSkeleton } from "@/components/listings/listing-card";
+import { CategoryBar } from "@/components/search/category-bar";
+import { FiltersDialog } from "@/components/search/filters-dialog";
+import { Pagination } from "@/components/search/pagination";
+import { SearchForm } from "@/components/search/search-form";
+import { SortSelect } from "@/components/search/sort-select";
+import { Button } from "@/components/ui/button";
+import { propertyTypeLabel } from "@/lib/listings/constants";
+import { parseListingFilters, type ListingFilters } from "@/lib/listings/search-params";
+import { getFavouriteState } from "@/lib/queries/favourites";
+import { searchListings } from "@/lib/queries/listings";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
-const STEPS = [
-  {
-    icon: PenLine,
-    title: "Invent a place",
-    body: "A lighthouse that critiques your outfit. A studio flat inside a vending machine. If it can't exist, it belongs here.",
-  },
-  {
-    icon: Camera,
-    title: "Make it look real",
-    body: "Photos, amenities, house rules and a nightly price that makes no sense, all presented with a straight face.",
-  },
-  {
-    icon: Share2,
-    title: "Share the link",
-    body: "Every listing gets its own page and preview card, ready for the group chat. Reservations are, sadly, imaginary.",
-  },
-];
-
-export default function HomePage() {
+export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
     <main id="main" className="flex-1">
-      <section className="page-container py-16 sm:py-24">
-        <p className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-brand" aria-hidden="true" />
-          Every stay is 100% fictional
-        </p>
-        <h1 className="mt-6 max-w-4xl font-heading text-5xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-7xl">
-          Unreal stays.
-          <br />
-          <span className="text-brand">Unbelievable experiences.</span>
+      <section className="page-container pt-10 pb-8 sm:pt-14 sm:pb-10">
+        <h1 className="max-w-3xl font-heading text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl">
+          Unreal stays. <span className="text-brand">Unbelievable experiences.</span>
         </h1>
-        <p className="mt-6 max-w-2xl text-lg text-pretty text-muted-foreground sm:text-xl">
-          accommodationDog is a marketplace for places that don&apos;t exist. Dream up a listing, give it the full
-          five-star treatment, and collect reviews from guests who will never, ever arrive.
+        <p className="mt-4 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
+          Browse gloriously fictional places to stay. Nothing here can actually be booked, and that&apos;s rather the
+          point.
         </p>
-      </section>
-
-      <section aria-labelledby="how-it-works" className="border-t">
-        <div className="page-container py-14 sm:py-20">
-          <h2 id="how-it-works" className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
-            How hosting nowhere works
-          </h2>
-          <ol className="mt-8 grid gap-8 sm:grid-cols-3 sm:gap-10">
-            {STEPS.map(({ icon: Icon, title, body }, index) => (
-              <li key={title} className="grid content-start gap-3">
-                <div className="flex size-11 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                  <Icon className="size-5" aria-hidden="true" />
-                </div>
-                <h3 className="text-lg font-semibold">
-                  <span className="sr-only">Step {index + 1}: </span>
-                  {title}
-                </h3>
-                <p className="text-muted-foreground">{body}</p>
-              </li>
-            ))}
-          </ol>
+        <div className="mt-8">
+          {/* Prefilled from the URL, so it streams in; the empty form is the static fallback. */}
+          <Suspense fallback={<SearchForm />}>
+            <PrefilledSearchForm searchParams={searchParams} />
+          </Suspense>
         </div>
       </section>
+
+      <Suspense fallback={<FeedSkeleton />}>
+        <ListingFeed searchParams={searchParams} />
+      </Suspense>
     </main>
+  );
+}
+
+type SearchParamsPromise = PageProps<"/">["searchParams"];
+
+async function PrefilledSearchForm({ searchParams }: { searchParams: SearchParamsPromise }) {
+  return <SearchForm filters={parseListingFilters(await searchParams)} />;
+}
+
+async function ListingFeed({ searchParams }: { searchParams: SearchParamsPromise }) {
+  const filters = parseListingFilters(await searchParams);
+  const result = await searchListings(filters);
+
+  return (
+    <FavouritesProvider state={getFavouriteState()}>
+      <div className="sticky top-16 z-30 border-y bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/85 sm:top-20">
+        <div className="page-container flex items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <CategoryBar filters={filters} />
+          </div>
+          <div className="hidden md:block">
+            <FiltersDialog filters={filters} />
+          </div>
+        </div>
+      </div>
+
+      <section aria-labelledby="results-heading" className="page-container py-8">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="results-heading" aria-live="polite" className="text-lg font-semibold">
+            {resultsHeading(filters, result.total)}
+          </h2>
+          <div className="flex items-center gap-2">
+            <div className="md:hidden">
+              <FiltersDialog filters={filters} />
+            </div>
+            <SortSelect filters={filters} />
+          </div>
+        </div>
+
+        {result.listings.length > 0 ? (
+          <>
+            <div className={LISTING_GRID_CLASS}>
+              {result.listings.map((listing, index) => (
+                <ListingCard key={listing.id} listing={listing} href={listingHref(listing.id, filters)} priority={index < 4} />
+              ))}
+            </div>
+            <div className="mt-12">
+              <Pagination filters={filters} pageCount={result.pageCount} />
+            </div>
+          </>
+        ) : (
+          <EmptyState filtered={hasRefinements(filters)} />
+        )}
+      </section>
+    </FavouritesProvider>
+  );
+}
+
+function resultsHeading(filters: ListingFilters, total: number) {
+  const noun = total === 1 ? "fictional stay" : "fictional stays";
+  const type = filters.type ? ` · ${propertyTypeLabel(filters.type)}` : "";
+  return filters.q ? `${total} ${noun} matching “${filters.q}”${type}` : `${total} ${noun}${type}`;
+}
+
+/** Carries search dates and guests through to the listing's booking card. */
+function listingHref(id: string, filters: ListingFilters) {
+  const params = new URLSearchParams();
+  if (filters.checkIn) params.set("checkin", filters.checkIn);
+  if (filters.checkOut) params.set("checkout", filters.checkOut);
+  if (filters.guests) params.set("guests", String(filters.guests));
+  const query = params.toString();
+  return `/listings/${id}${query ? `?${query}` : ""}`;
+}
+
+function hasRefinements(filters: ListingFilters) {
+  return Boolean(
+    filters.q || filters.type || filters.guests || filters.minPrice !== undefined || filters.maxPrice !== undefined ||
+      filters.amenities.length || filters.rating || filters.page > 1,
+  );
+}
+
+function EmptyState({ filtered }: { filtered: boolean }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-16 text-center">
+      <SearchX className="size-10 text-muted-foreground" aria-hidden="true" />
+      {filtered ? (
+        <>
+          <p className="text-lg font-semibold">No stays match those filters.</p>
+          <p className="max-w-md text-muted-foreground">Even our imagination has limits. Try fewer filters or a different search.</p>
+          <Button asChild variant="outline" className="mt-2">
+            <Link href="/">Clear all filters</Link>
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="text-lg font-semibold">No listings yet.</p>
+          <p className="max-w-md text-muted-foreground">
+            {isSupabaseConfigured
+              ? "The marketplace is empty. Somebody needs to invent somewhere to stay."
+              : "Connect Supabase (see the README) to start browsing listings."}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FeedSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading stays">
+      <div className="h-[4.5rem] border-y" />
+      <div className="page-container py-8">
+        <div className="mb-6 h-7 w-48 rounded bg-muted" />
+        <div className={LISTING_GRID_CLASS}>
+          {Array.from({ length: 8 }, (_, i) => (
+            <ListingCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

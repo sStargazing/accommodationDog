@@ -51,10 +51,9 @@ const SUPABASE_STUBS = /* sql */ `
     select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
   $$;
 
-  -- Supabase's default privileges for objects created in public.
-  alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
-  alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
-  alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+  -- Newer Supabase projects do not grant anon/authenticated access to new
+  -- public tables automatically, so none is granted here either: the
+  -- migrations must grant everything the API needs explicitly.
 `;
 
 const MIGRATIONS_DIR = join(__dirname, "..", "migrations");

@@ -60,6 +60,23 @@ npm run dev
 
 Open http://localhost:3000.
 
+### 5. Seed development data (optional)
+
+Fills the site with 12 fictional listings, 16 fictional users (with dog avatars), photos, reviews and favourites. Add your project's **secret key** to `.env.local` first:
+
+```
+SUPABASE_SECRET_KEY=sb_secret_...   # Project Settings → API Keys (or the legacy service_role key)
+```
+
+The secret key bypasses Row Level Security. Only the seed script uses it, and it never reaches the app or the browser. Never give it a `NEXT_PUBLIC_` prefix.
+
+```bash
+npm run seed              # skips if seed data already exists
+npm run seed -- --reset   # deletes previous seed users, their listings and photos, then re-seeds
+```
+
+Seed users have `@seed.accommodationdog.invalid` emails and random passwords, so nobody can log in as them. Photos are downloaded from [Unsplash](https://unsplash.com/license) and stored in your project's Storage. Photographers are credited in `scripts/seed/data.mts`.
+
 ### Making someone an admin
 
 Admins are listed in `public.admin_users`, which has no API access at all. Add one from the SQL editor:
@@ -78,7 +95,8 @@ select id from public.profiles where username = 'your_username';
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Generate route types, then `tsc --noEmit` |
 | `npm test` | Unit tests and database/RLS tests (no Docker needed) |
-| `npm run test:e2e` | Playwright tests against a production build, using local Google Chrome (`npx playwright install chrome` on CI) |
+| `npm run test:e2e` | Playwright tests against a production build, using local Google Chrome (`npx playwright install chrome` on CI). The listing tests skip themselves when the database has no listings. |
+| `npm run seed` | Seed development data (see above) |
 
 ### About the database tests
 
@@ -92,6 +110,9 @@ select id from public.profiles where username = 'your_username';
 - **Rate limits** on listings (10/h), reviews (20/h) and reports (10/h) are enforced by `BEFORE INSERT` triggers, so they also apply to direct API calls. Auth endpoints use Supabase Auth's built-in rate limits.
 - **Sessions.** `proxy.ts` (Next 16's replacement for middleware) refreshes the Supabase session cookie and does early redirects for protected routes. Pages and actions re-check the user through `lib/auth.ts`.
 - **Cache Components.** Anything that reads the session (for example the header's account menu) renders inside `<Suspense>`, so pages keep a static shell that loads instantly.
+- **Public data is cached.** Listing queries run through a cookie-free Supabase client inside `"use cache"` (tagged `listings`, `listing:<id>` and `reviews:<id>`, refreshed within about a minute), so shared listing links load fast. Per-user data such as favourites streams in separately.
+- **Search and filters** are plain `GET` forms and links, so every result page has a shareable URL and works without JavaScript. Text search splits the query into words, and every word must match the title, city, country or description (case-insensitive, partial matches). Check-in and check-out dates only prefill the simulated booking card; there is no availability.
+- **The simulated booking** is entirely client-side: it calculates `nightly × nights + cleaning + service` and opens a joke dialog. It never sends a request (an e2e test checks this) and never asks for payment details.
 - **Forms.** The auth forms use Server Actions with `useActionState`, so they work before JavaScript loads. React Hook Form is reserved for the multi-step create-listing form.
 - **Images** live in public-read Storage buckets (`listing-images`, `avatars`) under `<user id>/<random uuid>.<ext>`. Bucket limits enforce type (JPEG/PNG/WebP) and size (5 MB / 2 MB), and policies restrict writes to the owner's folder.
 - **XSS.** User content is rendered through React's escaping only. Never use `dangerouslySetInnerHTML` for user content.
@@ -123,7 +144,7 @@ proxy.ts             Session refresh + optimistic route protection
 ## Roadmap
 
 - [x] **Phase 1, Foundation:** app shell, branding, schema and RLS, authentication
-- [ ] **Phase 2, Listing experience:** home feed, listing cards and detail page, galleries, search, filters, seed data
+- [x] **Phase 2, Listing experience:** home feed, listing cards and detail page, galleries, search, filters, seed data. Favourite hearts, sharing and the simulated Reserve also work, because the card and detail designs include them.
 - [ ] **Phase 3, User-generated content:** multi-step create form, uploads, editing, profiles, My Listings
-- [ ] **Phase 4, Social:** reviews, favourites, sharing, simulated booking, reporting and moderation
+- [ ] **Phase 4, Social:** writing reviews, `/saved` page, OG preview images, reporting and moderation
 - [ ] **Phase 5, Polish and deployment:** metadata and OG images, sitemap, performance, Vercel deploy
