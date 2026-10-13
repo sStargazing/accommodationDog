@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { FictionalBadge } from "@/components/listings/fictional-badge";
 import { AmenityList, listingFacts } from "@/components/listings/listing-details";
 import { mosaicClasses } from "@/components/listings/listing-gallery";
 import { propertyTypeLabel } from "@/lib/listings/constants";
@@ -29,7 +28,6 @@ export function ListingPreview({ values }: { values: Partial<ListingFormValues> 
               className="object-cover"
               unoptimized
             />
-            {index === 0 && <FictionalBadge className="absolute top-2 left-2" />}
           </div>
         ))}
       </div>

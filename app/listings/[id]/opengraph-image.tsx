@@ -1,11 +1,11 @@
 import { ImageResponse } from "next/og";
 import sharp from "sharp";
 import { coverImageDataUrl, loadGoogleFont, OG_SIZE } from "@/lib/og/assets";
-import { OG_COLORS, OgFictionalPill, OgWordmark } from "@/lib/og/brand";
+import { OG_COLORS, OgWordmark } from "@/lib/og/brand";
 import { getListing } from "@/lib/queries/listings";
 import { formatPrice, formatRating, pluralize } from "@/lib/utils/format";
 
-export const alt = "A fictional listing on accommodationDog";
+export const alt = "A listing on accommodationDog";
 export const size = OG_SIZE;
 // JPEG keeps photo cards small enough for chat apps (WhatsApp skips previews over ~300 KB).
 export const contentType = "image/jpeg";
@@ -15,7 +15,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const { id } = await params;
   const listing = await getListing(id);
 
-  const title = listing?.title ?? "This place doesn't exist. Even by our standards.";
+  const title = listing?.title ?? "Listing not found";
   const location = listing ? `${listing.city}, ${listing.country}` : "";
   const price = listing ? formatPrice(listing.nightlyPrice) : "";
   const rating =
@@ -26,7 +26,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         : "";
   const cover = listing?.images[0] ? await coverImageDataUrl(listing.images[0].url) : null;
 
-  const text = `${title}${location}${price}${rating} night Fictional listing accommodationDog`;
+  const text = `${title}${location}${price}${rating} night accommodationDog`;
   const [heading, body] = await Promise.all([
     loadGoogleFont("Bricolage Grotesque", 700, text),
     loadGoogleFont("Geist", 400, text),
@@ -48,11 +48,9 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <OgFictionalPill />
             <div
               style={{
                 display: "flex",
-                marginTop: 32,
                 fontFamily: "Bricolage Grotesque",
                 fontSize: title.length > 48 ? 46 : title.length > 30 ? 54 : 64,
                 fontWeight: 700,

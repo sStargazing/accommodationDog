@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ListingSummary } from "@/lib/queries/listings";
 import { formatPrice } from "@/lib/utils/format";
 import { FavouriteButton } from "./favourite-button";
-import { FictionalBadge } from "./fictional-badge";
 import { Rating } from "./rating";
 
 export function ListingCard({
@@ -35,7 +34,6 @@ export function ListingCard({
             <ImageOff className="size-8" aria-hidden="true" />
           </div>
         )}
-        <FictionalBadge className="pointer-events-none absolute top-3 left-3" />
         {/* Above the stretched link so it stays clickable. */}
         <FavouriteButton listingId={listing.id} listingTitle={listing.title} className="absolute top-2 right-2 z-10" />
       </div>

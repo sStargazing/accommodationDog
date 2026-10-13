@@ -96,7 +96,7 @@ test("report content, then moderate it as an admin", async ({ page, browser }) =
 
   // Non-admins can't see the moderation page.
   await page.goto("/admin");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("less real than our listings");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("couldn't find that page");
 
   // The admin removes the listing.
   const adminContext = await browser.newContext();
@@ -118,7 +118,7 @@ test("report content, then moderate it as an admin", async ({ page, browser }) =
 
   // The listing and its photo are gone.
   await page.goto(`/listings/${listing.id}`);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("doesn't exist");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("couldn't find that listing");
   const { data: files } = await admin().storage.from("listing-images").list(host.id);
   expect(files ?? []).toHaveLength(0);
 });

@@ -33,25 +33,3 @@ export function OgWordmark({ size }: { size: number }) {
     </div>
   );
 }
-
-export function OgFictionalPill({ fontSize = 22 }: { fontSize?: number }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        alignSelf: "flex-start",
-        border: `2px solid ${OG_COLORS.border}`,
-        borderRadius: 999,
-        padding: "8px 18px",
-        fontSize,
-        color: OG_COLORS.ink,
-        background: "#fff",
-      }}
-    >
-      <div style={{ width: 10, height: 10, borderRadius: 999, background: OG_COLORS.brand }} />
-      Fictional listing
-    </div>
-  );
-}

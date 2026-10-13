@@ -5,7 +5,7 @@ import Link from "next/link";
 export function HeaderSearch() {
   return (
     <>
-      <form action="/" role="search" aria-label="Search fictional stays" className="hidden w-full max-w-sm md:block">
+      <form action="/" role="search" aria-label="Search stays" className="hidden w-full max-w-sm md:block">
         <label className="flex h-11 items-center gap-2 rounded-full border bg-background pr-1.5 pl-5 shadow-sm transition-shadow focus-within:shadow-md hover:shadow-md">
           <span className="sr-only">Search destinations</span>
           <input

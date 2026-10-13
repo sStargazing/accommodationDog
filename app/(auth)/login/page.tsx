@@ -13,7 +13,7 @@ export default function LogInPage() {
   return (
     <AuthCard
       title="Welcome back"
-      description="Log in to list, review and save stays that don't exist."
+      description="Log in to list, review and save stays."
       footer={
         <>
           New here?{" "}

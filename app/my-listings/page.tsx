@@ -21,7 +21,7 @@ export default function MyListingsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">My listings</h1>
-          <p className="mt-2 text-muted-foreground">Manage the places you&apos;ve invented and see how they&apos;re doing.</p>
+          <p className="mt-2 text-muted-foreground">Manage your listings and see how they&apos;re doing.</p>
         </div>
         <Button asChild>
           <Link href="/create">
@@ -46,7 +46,7 @@ async function Listings() {
       <div className="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-16 text-center">
         <p className="text-lg font-semibold">You haven&apos;t listed anywhere yet.</p>
         <p className="max-w-md text-muted-foreground">
-          The world is full of places that don&apos;t exist. Somebody has to list them.
+          List your first place and it will appear here.
         </p>
         <Button asChild className="mt-2">
           <Link href="/create">Create your first listing</Link>

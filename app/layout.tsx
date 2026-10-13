@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     template: "%s · accommodationDog",
   },
   description:
-    "A parody accommodation marketplace full of gloriously fictional places to stay. Browse, review and share them. Nothing here can actually be booked.",
+    "Extraordinary places to stay: castles, lighthouses, treehouses and more. Browse, review and share them.",
   applicationName: "accommodationDog",
   openGraph: {
     type: "website",
     siteName: "accommodationDog",
     title: "accommodationDog · Unreal stays. Unbelievable experiences.",
-    description: "A parody accommodation marketplace full of gloriously fictional places to stay.",
+    description: "Extraordinary places to stay: castles, lighthouses, treehouses and more.",
   },
 };
 

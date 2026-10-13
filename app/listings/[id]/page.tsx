@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps<"/listings/[id]">):
   const listing = await getListing(id);
   if (!listing) return { title: "Listing not found" };
 
-  const description = `A fictional ${propertyTypeLabel(listing.propertyType).toLowerCase()} in ${listing.city}, ${listing.country}. ${listing.description}`
+  const description = `${propertyTypeLabel(listing.propertyType)} in ${listing.city}, ${listing.country}. ${listing.description}`
     .replace(/\s+/g, " ")
     .slice(0, 160);
   return {

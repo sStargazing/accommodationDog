@@ -14,7 +14,7 @@ export default function CreateListingPage() {
     <main id="main" className="page-container max-w-3xl flex-1 py-8 sm:py-12">
       <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Create a listing</h1>
       <p className="mt-2 mb-10 text-muted-foreground">
-        Invent somewhere wonderful, ridiculous or both. It will appear on the site as a fictional listing.
+        Tell guests what makes your place special, add some photos and publish.
       </p>
       <Suspense fallback={<ListingFormSkeleton />}>
         <SignedInForm />

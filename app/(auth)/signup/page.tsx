@@ -12,7 +12,7 @@ export default function SignUpPage() {
   return (
     <AuthCard
       title="Join the pack"
-      description="Create an account to host imaginary stays and review other people's."
+      description="Create an account to list your place, save favourites and write reviews."
       footer={
         <>
           Already have an account?{" "}

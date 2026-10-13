@@ -222,9 +222,6 @@ export function ListingForm(props: ListingFormProps) {
             </fieldset>
             <fieldset className="grid gap-4">
               <legend className="mb-1 font-semibold">Pricing</legend>
-              <p className="-mt-2 text-sm text-muted-foreground">
-                All prices are simulated. Nobody will ever pay them, which is why you can be as ambitious as you like.
-              </p>
               <div className="grid gap-4 sm:grid-cols-3">
                 {(
                   [
@@ -418,7 +415,7 @@ function keepFocus(event: React.MouseEvent) {
 
 const STEP_HEADINGS = [
   "Tell us about your place",
-  "Rooms, beds and (fictional) prices",
+  "Rooms, beds and prices",
   "What does it offer?",
   "Add some photos",
   "Preview and publish",

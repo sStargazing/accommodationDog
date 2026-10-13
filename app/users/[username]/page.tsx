@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!profile) return { title: "Profile not found" };
   return {
     title: `@${profile.username}`,
-    description: `Fictional stays hosted by @${profile.username} on accommodationDog.`,
+    description: `Stays hosted by @${profile.username} on accommodationDog.`,
     alternates: { canonical: `/users/${profile.username}` },
   };
 }
@@ -70,7 +70,7 @@ async function Profile({ params }: { params: Params }) {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">@{profile.username} hasn&apos;t invented anywhere to stay. Yet.</p>
+          <p className="text-muted-foreground">@{profile.username} hasn&apos;t listed anywhere yet.</p>
         )}
       </section>
     </Favourites>

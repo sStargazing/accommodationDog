@@ -16,7 +16,7 @@ export function SearchForm({ filters }: { filters?: ListingFilters }) {
       id="search"
       action="/"
       role="search"
-      aria-label="Search fictional stays"
+      aria-label="Search stays"
       className="grid scroll-mt-28 overflow-hidden rounded-2xl border bg-background shadow-[0_6px_24px_rgb(0_0_0/0.08)] md:grid-cols-[1.6fr_1fr_1fr_0.9fr_auto] md:rounded-full"
     >
       {filters && <HiddenFilterFields filters={filters} exclude={["q", "checkin", "checkout", "guests"]} />}

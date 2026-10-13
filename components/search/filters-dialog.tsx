@@ -33,7 +33,7 @@ export function FiltersDialog({ filters }: { filters: ListingFilters }) {
       <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-xl">
         <div className="border-b px-6 py-4">
           <DialogTitle className="text-center text-base font-semibold">Filters</DialogTitle>
-          <DialogDescription className="sr-only">Narrow down the fictional stays shown.</DialogDescription>
+          <DialogDescription className="sr-only">Narrow down the stays shown.</DialogDescription>
         </div>
 
         <form action="/" className="flex min-h-0 flex-1 flex-col">

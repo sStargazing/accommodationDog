@@ -34,7 +34,7 @@ const money = (label: string) =>
   z
     .number({ error: `Enter ${label}.` })
     .min(0, "Can't be negative.")
-    .max(1_000_000, "That's too much, even for a fictional place.")
+    .max(1_000_000, "Must be 1,000,000 or less.")
     .refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-6, "Use at most two decimal places.");
 
 export const listingImageSchema = z.object({

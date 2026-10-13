@@ -14,7 +14,7 @@ export const reviewSchema = z.object({
   content: z
     .string()
     .trim()
-    .min(1, "Write a few words about your (imaginary) stay.")
+    .min(1, "Write a few words about the place.")
     .max(REVIEW_MAX_LENGTH, `Keep reviews to ${REVIEW_MAX_LENGTH.toLocaleString("en-US")} characters or fewer.`),
 });
 

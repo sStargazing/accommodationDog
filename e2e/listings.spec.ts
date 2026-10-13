@@ -10,10 +10,9 @@ async function firstListingHref(page: Page) {
   return (await link.getAttribute("href"))!;
 }
 
-test("listing cards show the essentials and a fictional marker", async ({ page }) => {
+test("listing cards show the essentials", async ({ page }) => {
   await firstListingHref(page);
   const card = page.locator("article").first();
-  await expect(card.getByText("Fictional listing")).toBeVisible();
   await expect(card.getByText(/\$\d[\d,]* night/)).toBeVisible();
   await expect(card.getByRole("button", { name: /^Save / })).toBeVisible();
 });
@@ -82,5 +81,5 @@ test("listing page does not overflow horizontally", async ({ page }) => {
 
 test("unknown listings show a not-found page", async ({ page }) => {
   await page.goto("/listings/00000000-0000-0000-0000-000000000000");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("doesn't exist");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("couldn't find that listing");
 });

@@ -22,7 +22,7 @@ const NOT_CONFIGURED: FormState = {
 function authErrorMessage(error: AuthError): string {
   switch (error.code) {
     case "invalid_credentials":
-      return "That email and password don't match. Even imaginary doors need the right key.";
+      return "That email and password don't match.";
     case "email_not_confirmed":
       return "Please confirm your email address first. Check your inbox for the link.";
     case "user_already_exists":

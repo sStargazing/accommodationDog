@@ -28,8 +28,8 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
           Unreal stays. <span className="text-brand">Unbelievable experiences.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
-          Browse gloriously fictional places to stay. Nothing here can actually be booked, and that&apos;s rather the
-          point.
+          Castles, lighthouses, treehouses and places you won&apos;t find anywhere else. Find your next unforgettable
+          stay.
         </p>
         <div className="mt-8">
           {/* Prefilled from the URL, so it streams in; the empty form is the static fallback. */}
@@ -102,7 +102,7 @@ async function ListingFeed({ searchParams }: { searchParams: SearchParamsPromise
 }
 
 function resultsHeading(filters: ListingFilters, total: number) {
-  const noun = total === 1 ? "fictional stay" : "fictional stays";
+  const noun = total === 1 ? "stay" : "stays";
   const type = filters.type ? ` · ${propertyTypeLabel(filters.type)}` : "";
   return filters.q ? `${total} ${noun} matching “${filters.q}”${type}` : `${total} ${noun}${type}`;
 }
@@ -141,7 +141,7 @@ function EmptyState({ filtered }: { filtered: boolean }) {
           <p className="text-lg font-semibold">No listings yet.</p>
           <p className="max-w-md text-muted-foreground">
             {isSupabaseConfigured
-              ? "The marketplace is empty. Somebody needs to invent somewhere to stay."
+              ? "There are no stays listed yet. Be the first to list one."
               : "Connect Supabase (see the README) to start browsing listings."}
           </p>
         </>

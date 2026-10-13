@@ -89,7 +89,7 @@ function SimulatedBooking({
         className="scroll-mt-28 rounded-2xl border p-6 shadow-[0_6px_24px_rgb(0_0_0/0.08)]"
       >
         <h2 id={`${id}-heading`} className="sr-only">
-          Simulated booking
+          Booking
         </h2>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p>

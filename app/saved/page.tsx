@@ -18,7 +18,7 @@ export default function SavedPage() {
   return (
     <main id="main" className="page-container flex-1 py-8 sm:py-12">
       <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Saved</h1>
-      <p className="mt-2 text-muted-foreground">Places you&apos;d stay, if only they existed.</p>
+      <p className="mt-2 text-muted-foreground">The places you&apos;ve saved for later.</p>
       <Suspense
         fallback={
           <div className={`mt-10 ${LISTING_GRID_CLASS}`} aria-busy="true" aria-label="Loading saved listings">

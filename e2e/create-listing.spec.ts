@@ -36,7 +36,7 @@ test("create, share, edit and delete a listing", async ({ page, browser, context
   await page.getByRole("button", { name: "Next" }).click();
 
   // Step 2: details
-  await expect(page.getByRole("heading", { name: "Rooms, beds and (fictional) prices" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Rooms, beds and prices" })).toBeVisible();
   await page.getByLabel("Max guests").fill("3");
   await page.getByLabel("Bathrooms").fill("0.5");
   await page.getByLabel("Price per night").fill("42.5");
@@ -141,7 +141,7 @@ test("create, share, edit and delete a listing", async ({ page, browser, context
   const otherPage = await otherContext.newPage();
   await logIn(otherPage, intruder);
   await otherPage.goto(`${listingUrl}/edit`);
-  await expect(otherPage.getByRole("heading", { level: 1 })).toContainText("doesn't exist");
+  await expect(otherPage.getByRole("heading", { level: 1 })).toContainText("couldn't find that listing");
   await otherContext.close();
 
   // My listings shows it with metrics; delete it after confirming.
@@ -153,7 +153,7 @@ test("create, share, edit and delete a listing", async ({ page, browser, context
   await expect(page.getByText("You haven't listed anywhere yet.")).toBeVisible({ timeout: 15_000 });
 
   await page.goto(listingUrl);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("doesn't exist");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("couldn't find that listing");
 });
 
 test("signed-in pages don't overflow on a phone", async ({ browser }) => {

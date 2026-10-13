@@ -8,7 +8,7 @@ export const contentType = "image/png";
 
 const HEADLINE = "Unreal stays.";
 const ACCENT = "Unbelievable experiences.";
-const NOTE = "A parody marketplace. Every stay is 100% fictional.";
+const NOTE = "Castles, lighthouses, treehouses and more.";
 
 /** The default social preview card for the site. */
 export default async function Image() {
