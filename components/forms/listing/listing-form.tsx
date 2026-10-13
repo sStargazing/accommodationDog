@@ -96,8 +96,17 @@ export function ListingForm(props: ListingFormProps) {
     setServerError(null);
     startSubmit(async () => {
       const result = editing ? await updateListing(props.listingId, values) : await createListing(values);
-      // On success the action redirects to the listing, so only failures return here.
-      if (!result) return;
+      if (!result) {
+        // Published: the action is redirecting to the new listing. Next keeps
+        // recently visited pages alive in the background, so clear the form
+        // now or "Create listing" would reopen this one, ready to post twice.
+        if (!editing) {
+          form.reset(EMPTY);
+          setStep(0);
+          setFurthestStep(0);
+        }
+        return;
+      }
       setServerError(result.error);
       const fieldErrors = Object.entries(result.fieldErrors ?? {});
       for (const [field, messages] of fieldErrors) {

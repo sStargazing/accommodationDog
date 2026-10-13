@@ -2,7 +2,7 @@
 
 import { addDays, format, parseISO } from "date-fns";
 import { useSearchParams } from "next/navigation";
-import { useId, useState } from "react";
+import { Suspense, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { calculatePrice, countNights } from "@/lib/listings/pricing";
@@ -23,20 +23,55 @@ type BookingCardProps = {
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * Prefills dates and guests from the URL (carried over from a search). The
+ * URL is only known per request, so the card without them is the static
+ * fallback; it's the same size, so nothing shifts when it swaps in.
+ */
+export function BookingCard(props: BookingCardProps) {
+  return (
+    <Suspense fallback={<SimulatedBooking {...props} />}>
+      <BookingCardFromUrl {...props} />
+    </Suspense>
+  );
+}
+
+function BookingCardFromUrl(props: BookingCardProps) {
+  const searchParams = useSearchParams();
+  const date = (key: string) => {
+    const value = searchParams.get(key) ?? "";
+    return isoDate.test(value) ? value : "";
+  };
+  return (
+    <SimulatedBooking
+      {...props}
+      initialCheckIn={date("checkin")}
+      initialCheckOut={date("checkout")}
+      initialGuests={Number(searchParams.get("guests")) || 1}
+    />
+  );
+}
+
+/**
  * The simulated booking card. It calculates a price breakdown and "reserves"
  * by opening a joke dialog. It never talks to the server, asks for payment
  * details or creates a booking of any kind.
  */
-export function BookingCard({ title, nightlyPrice, cleaningFee, serviceFee, maxGuests, ratingAvg, reviewCount }: BookingCardProps) {
-  const searchParams = useSearchParams();
+function SimulatedBooking({
+  title,
+  nightlyPrice,
+  cleaningFee,
+  serviceFee,
+  maxGuests,
+  ratingAvg,
+  reviewCount,
+  initialCheckIn = "",
+  initialCheckOut = "",
+  initialGuests = 1,
+}: BookingCardProps & { initialCheckIn?: string; initialCheckOut?: string; initialGuests?: number }) {
   const id = useId();
-  const initial = (key: string) => {
-    const value = searchParams.get(key) ?? "";
-    return isoDate.test(value) ? value : "";
-  };
-  const [checkIn, setCheckIn] = useState(() => initial("checkin"));
-  const [checkOut, setCheckOut] = useState(() => initial("checkout"));
-  const [guests, setGuests] = useState(() => Math.min(Math.max(Number(searchParams.get("guests")) || 1, 1), maxGuests));
+  const [checkIn, setCheckIn] = useState(initialCheckIn);
+  const [checkOut, setCheckOut] = useState(initialCheckOut);
+  const [guests, setGuests] = useState(() => Math.min(Math.max(initialGuests, 1), maxGuests));
   const [reserveOpen, setReserveOpen] = useState(false);
 
   const nights = countNights(checkIn, checkOut);

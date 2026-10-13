@@ -94,8 +94,15 @@ test("create, share, edit and delete a listing", async ({ page, browser, context
   await expect(page.getByText("Your listing is live.")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
   await expect(page.getByText("This is a fictional listing.")).toBeVisible();
-  await expect(page.getByText("Leak-proof (mostly)")).toBeVisible();
+  await expect(page.getByRole("main").getByText("Leak-proof (mostly)")).toBeVisible();
   await expect(page.getByRole("link", { name: "Edit listing" })).toBeVisible();
+
+  // Starting another listing gets a fresh form, not the one just published.
+  await page.getByRole("link", { name: "Create listing" }).click();
+  await expect(page.getByLabel("Listing title")).toHaveValue("");
+  await expect(page.getByText("Step 1 of 5")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
 
   // Share: the copied link opens the listing for a signed-out visitor.
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);

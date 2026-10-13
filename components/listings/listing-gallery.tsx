@@ -63,7 +63,16 @@ export function ListingGallery({ images, title }: { images: ListingImage[]; titl
                   className="relative block aspect-[4/3] w-full overflow-hidden bg-muted outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset sm:rounded-2xl"
                   aria-label={`Open ${alt(index)} full screen`}
                 >
-                  <Image src={image.url} alt={alt(index)} fill sizes="100vw" priority={index === 0} className="object-cover" />
+                  <Image
+                    src={image.url}
+                    alt={alt(index)}
+                    fill
+                    sizes="100vw"
+                    // The first photo is the main image on phones.
+                    loading={index === 0 ? "eager" : "lazy"}
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                    className="object-cover"
+                  />
                 </button>
               </CarouselItem>
             ))}
@@ -92,7 +101,8 @@ export function ListingGallery({ images, title }: { images: ListingImage[]; titl
               alt={alt(index)}
               fill
               sizes={index === 0 ? "(min-width: 1440px) 680px, 50vw" : "(min-width: 1440px) 340px, 25vw"}
-              priority={index === 0}
+              // Hidden on phones, so not eager: lazy images that aren't displayed never download.
+              fetchPriority={index === 0 ? "high" : "auto"}
               className="object-cover transition duration-300 group-hover:brightness-90"
             />
           </button>

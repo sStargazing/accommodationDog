@@ -69,7 +69,11 @@ async function uploadPhoto(bucket: (typeof BUCKETS)[number], userId: string, pho
   }
   const path = `${userId}/${randomUUID()}.webp`;
   check(
-    await supabase.storage.from(bucket).upload(path, await response.arrayBuffer(), { contentType: "image/webp" }),
+    await supabase.storage.from(bucket).upload(path, await response.arrayBuffer(), {
+      contentType: "image/webp",
+      // Random, never-reused file names: safe to cache for a year.
+      cacheControl: "31536000",
+    }),
     `Uploading ${photoUrl}`,
   );
   return path;

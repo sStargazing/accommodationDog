@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { updateProfile } from "@/lib/actions/profile";
 import { createUploadTicket } from "@/lib/actions/uploads";
 import { createClient } from "@/lib/supabase/client";
-import { AVATARS_BUCKET, publicStorageUrl } from "@/lib/storage";
+import { AVATARS_BUCKET, IMMUTABLE_CACHE_CONTROL, publicStorageUrl } from "@/lib/storage";
 import { initialFormState } from "@/lib/validations/form-state";
 import { IMAGE_TYPES, MAX_AVATAR_BYTES } from "@/lib/validations/listing";
 
@@ -35,7 +35,7 @@ export function ProfileForm({ username, avatarUrl }: { username: string; avatarU
       if (!ticket.ok) return setUploadError(ticket.error);
       const { error } = await createClient()
         .storage.from(ticket.bucket)
-        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMMUTABLE_CACHE_CONTROL });
       if (error) return setUploadError("Upload failed. Please try again.");
       setAvatar(ticket.path);
       setPreview(publicStorageUrl(AVATARS_BUCKET, ticket.path));

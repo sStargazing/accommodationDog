@@ -2,12 +2,11 @@ import { Heart } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { FavouritesProvider } from "@/components/listings/favourite-button";
+import { Favourites } from "@/components/listings/favourites";
 import { LISTING_GRID_CLASS, ListingCard, ListingCardSkeleton } from "@/components/listings/listing-card";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
 import { getSavedListings } from "@/lib/queries/account";
-import { getFavouriteState } from "@/lib/queries/favourites";
 import { pluralize } from "@/lib/utils/format";
 
 export const metadata: Metadata = {
@@ -53,13 +52,13 @@ async function SavedListings() {
   }
 
   return (
-    <FavouritesProvider state={getFavouriteState()}>
+    <Favourites>
       <p className="mt-8 mb-6 text-sm text-muted-foreground">{pluralize(listings.length, "saved stay")}</p>
       <div className={LISTING_GRID_CLASS}>
         {listings.map((listing) => (
           <ListingCard key={listing.id} listing={listing} href={`/listings/${listing.id}`} />
         ))}
       </div>
-    </FavouritesProvider>
+    </Favourites>
   );
 }

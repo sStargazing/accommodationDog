@@ -247,3 +247,20 @@ export async function getListingReviews(listingId: string): Promise<Review[]> {
       : [],
   );
 }
+
+/** Ids of the most popular published listings, for prebuilding their pages. */
+export async function getPopularListingIds(limit: number): Promise<string[]> {
+  "use cache";
+  cacheTag("listings");
+  cacheLife(PUBLIC_CACHE);
+
+  if (!isSupabaseConfigured) return [];
+  const { data } = await createPublicClient()
+    .from("listings")
+    .select("id")
+    .eq("status", "published")
+    .order("favourite_count", { ascending: false })
+    .order("view_count", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((row) => row.id);
+}

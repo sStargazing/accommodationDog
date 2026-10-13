@@ -1,7 +1,8 @@
 import { SearchX } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { FavouritesProvider } from "@/components/listings/favourite-button";
+import { Favourites } from "@/components/listings/favourites";
 import { LISTING_GRID_CLASS, ListingCard, ListingCardSkeleton } from "@/components/listings/listing-card";
 import { CategoryBar } from "@/components/search/category-bar";
 import { FiltersDialog } from "@/components/search/filters-dialog";
@@ -11,9 +12,13 @@ import { SortSelect } from "@/components/search/sort-select";
 import { Button } from "@/components/ui/button";
 import { propertyTypeLabel } from "@/lib/listings/constants";
 import { parseListingFilters, type ListingFilters } from "@/lib/listings/search-params";
-import { getFavouriteState } from "@/lib/queries/favourites";
 import { searchListings } from "@/lib/queries/listings";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+
+// Search and filter URLs all point search engines back to the plain home page.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -52,7 +57,7 @@ async function ListingFeed({ searchParams }: { searchParams: SearchParamsPromise
   const result = await searchListings(filters);
 
   return (
-    <FavouritesProvider state={getFavouriteState()}>
+    <Favourites>
       <div className="sticky top-16 z-30 border-y bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/85 sm:top-20">
         <div className="page-container flex items-center gap-4">
           <div className="min-w-0 flex-1">
@@ -92,7 +97,7 @@ async function ListingFeed({ searchParams }: { searchParams: SearchParamsPromise
           <EmptyState filtered={hasRefinements(filters)} />
         )}
       </section>
-    </FavouritesProvider>
+    </Favourites>
   );
 }
 

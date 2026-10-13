@@ -1,17 +1,34 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { createContext, Suspense, use, useOptimistic, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { createContext, use, useEffect, useOptimistic, useState, useTransition } from "react";
 import { setFavourite } from "@/lib/actions/listings";
 import type { FavouriteState } from "@/lib/queries/favourites";
 import { cn } from "@/lib/utils";
 
-const FavouritesContext = createContext<Promise<FavouriteState> | null>(null);
+type FavouritesContextValue = {
+  /** null until the session-dependent state has streamed in. */
+  state: FavouriteState | null;
+  setState: (state: FavouriteState) => void;
+};
 
-/** Shares one request for the user's favourites with every heart below it. */
-export function FavouritesProvider({ state, children }: { state: Promise<FavouriteState>; children: React.ReactNode }) {
-  return <FavouritesContext value={state}>{children}</FavouritesContext>;
+const FavouritesContext = createContext<FavouritesContextValue | null>(null);
+
+/**
+ * Holds the signed-in user's favourites for every heart below it. The page
+ * around it can stay static: the state arrives separately through
+ * <FavouritesSync>, rendered by the server inside its own <Suspense>.
+ */
+export function FavouritesProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<FavouriteState | null>(null);
+  return <FavouritesContext value={{ state, setState }}>{children}</FavouritesContext>;
+}
+
+export function FavouritesSync({ state }: { state: FavouriteState }) {
+  const context = use(FavouritesContext);
+  useEffect(() => context?.setState(state), [context, state]);
+  return null;
 }
 
 type FavouriteButtonProps = {
@@ -23,30 +40,25 @@ type FavouriteButtonProps = {
 };
 
 export function FavouriteButton(props: FavouriteButtonProps) {
-  return (
-    <Suspense fallback={<HeartButton {...props} favourited={false} disabled />}>
-      <ConnectedFavouriteButton {...props} />
-    </Suspense>
-  );
+  const context = use(FavouritesContext);
+  if (!context) throw new Error("FavouriteButton must be rendered inside a FavouritesProvider");
+  if (!context.state) return <HeartButton {...props} favourited={false} disabled />;
+  return <ConnectedFavouriteButton {...props} state={context.state} />;
 }
 
-function ConnectedFavouriteButton(props: FavouriteButtonProps) {
-  const statePromise = use(FavouritesContext);
-  if (!statePromise) throw new Error("FavouriteButton must be rendered inside a FavouritesProvider");
-  const { signedIn, ids } = use(statePromise);
-
+function ConnectedFavouriteButton({ state, ...props }: FavouriteButtonProps & { state: FavouriteState }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [saved, setSaved] = useState(() => ids.includes(props.listingId));
+  // The user's own toggles override what the server reported.
+  const [toggled, setToggled] = useState<boolean | null>(null);
+  const saved = toggled ?? state.ids.includes(props.listingId);
   const [optimisticSaved, setOptimisticSaved] = useOptimistic(saved);
   const [, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
 
   function toggle() {
-    if (!signedIn) {
-      const here = `${pathname}${searchParams.size ? `?${searchParams}` : ""}`;
-      router.push(`/login?next=${encodeURIComponent(here)}`);
+    if (!state.signedIn) {
+      router.push(`/login?next=${encodeURIComponent(`${pathname}${window.location.search}`)}`);
       return;
     }
     const next = !optimisticSaved;
@@ -54,7 +66,7 @@ function ConnectedFavouriteButton(props: FavouriteButtonProps) {
     startTransition(async () => {
       setOptimisticSaved(next);
       const result = await setFavourite(props.listingId, next);
-      if (result.ok) setSaved(result.favourited);
+      if (result.ok) setToggled(result.favourited);
       else if (result.reason === "signed_out") router.push(`/login?next=${encodeURIComponent(pathname)}`);
       else setFailed(true);
     });

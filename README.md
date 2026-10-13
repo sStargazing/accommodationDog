@@ -77,6 +77,24 @@ npm run seed -- --reset   # deletes previous seed users, their listings and phot
 
 Seed users have `@seed.accommodationdog.invalid` emails and random passwords, so nobody can log in as them. Photos are downloaded from [Unsplash](https://unsplash.com/license) and stored in your project's Storage. Photographers are credited in `scripts/seed/data.mts`.
 
+## Deploying to Vercel
+
+1. Push the repository to GitHub.
+2. In [Vercel](https://vercel.com/new), **Import** the repository. The Next.js preset needs no changes.
+3. Add **Environment Variables** (for Production, Preview and Development):
+
+   | Variable | Value |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Same as in `.env.local` |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Same as in `.env.local` |
+   | `NEXT_PUBLIC_SITE_URL` | Optional. Set it once you have a custom domain; otherwise the Vercel production URL is used automatically. |
+
+   Do **not** add `SUPABASE_SECRET_KEY`. The deployed app doesn't use it.
+4. **Deploy.** The build prebuilds the 50 most popular listing pages, so it needs the Supabase variables at build time.
+5. In Supabase, under **Authentication → URL Configuration**, set the **Site URL** to your production URL (e.g. `https://your-app.vercel.app`) and add `https://your-app.vercel.app/**` to **Redirect URLs**. Keep the `http://localhost:3000/**` entry for local development.
+
+Supabase's built-in email sender is limited to a few messages per hour and is meant for testing. Before real launch, set up custom SMTP under **Authentication → Emails**.
+
 ### Making someone an admin
 
 Admins can open **/admin** (also linked from their account menu) to review reports and remove reported listings or reviews. Admins are listed in `public.admin_users`, which has no API access at all. Add one from the SQL editor:
@@ -120,6 +138,8 @@ select id from public.profiles where username = 'your_username';
 - **Reviews** are one per user per listing, never on your own listing (unique constraint + RLS), and the listing's rating and count are recalculated by a trigger. The listing page marks them as comedic, since nobody can actually stay.
 - **Reporting and moderation.** Signed-in users can report a listing or review (one report per item per user, rate limited). Reports are readable only by admins. Removing reported content deletes it (with a listing's photos) and resolves every open report about it. Admin checks happen in the Server Action and again in RLS.
 - **Social previews.** Each listing has a generated Open Graph image (`app/listings/[id]/opengraph-image.tsx`): cover photo, title, location, price, rating and a "Fictional listing" marker, served as a JPEG of about 120 KB so chat apps show it. The site has a default card too.
+- **Rendering.** The 50 most popular listing pages are prebuilt and refreshed every minute; other listings render on their first visit and are then cached. Per-user parts (favourite hearts, the review form, the owner's Edit link) stream in separately, so they never stop a page from being static. The sitemap (`/sitemap.xml`), `robots.txt` and canonical URLs are generated from the same data. Social crawlers (WhatsApp, iMessage, Slack and others) receive full metadata in the page head.
+- **Security headers** (`next.config.ts`): no framing, no MIME sniffing, a strict referrer policy, and camera, microphone, location and payment APIs disabled.
 - **XSS.** User content is rendered through React's escaping only. Never use `dangerouslySetInnerHTML` for user content.
 
 ## Project structure
@@ -156,4 +176,4 @@ proxy.ts             Session refresh + optimistic route protection
 - [x] **Phase 2, Listing experience:** home feed, listing cards and detail page, galleries, search, filters, seed data. Favourite hearts, sharing and the simulated Reserve also work, because the card and detail designs include them.
 - [x] **Phase 3, User-generated content:** multi-step create and edit form, photo uploads, deletion, public profiles, Edit profile, My Listings and Saved
 - [x] **Phase 4, Social:** reviews (write, edit, delete), favourites, sharing with generated preview images, simulated booking, reporting and an admin moderation page
-- [ ] **Phase 5, Polish and deployment:** metadata and OG images, sitemap, performance, Vercel deploy
+- [x] **Phase 5, Polish and deployment:** sitemap, robots, canonical URLs, security headers, prebuilt listing pages, image loading and cache tuning, error pages, and a deployment guide

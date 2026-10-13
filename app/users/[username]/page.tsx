@@ -4,12 +4,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { FavouritesProvider } from "@/components/listings/favourite-button";
+import { Favourites } from "@/components/listings/favourites";
 import { LISTING_GRID_CLASS, ListingCard } from "@/components/listings/listing-card";
 import { UserAvatar } from "@/components/listings/user-avatar";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
-import { getFavouriteState } from "@/lib/queries/favourites";
 import { getProfile, getUserListings, type PublicProfile } from "@/lib/queries/profiles";
 import { pluralize } from "@/lib/utils/format";
 
@@ -43,7 +42,7 @@ async function Profile({ params }: { params: Params }) {
   const listings = await getUserListings(profile.id);
 
   return (
-    <FavouritesProvider state={getFavouriteState()}>
+    <Favourites>
       <header className="flex flex-col gap-6 border-b pb-8 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-5">
           <UserAvatar username={profile.username} avatarUrl={profile.avatarUrl} className="size-20 text-2xl sm:size-24" />
@@ -74,7 +73,7 @@ async function Profile({ params }: { params: Params }) {
           <p className="text-muted-foreground">@{profile.username} hasn&apos;t invented anywhere to stay. Yet.</p>
         )}
       </section>
-    </FavouritesProvider>
+    </Favourites>
   );
 }
 

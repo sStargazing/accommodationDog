@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createUploadTicket } from "@/lib/actions/uploads";
-import { LISTING_IMAGES_BUCKET, publicStorageUrl } from "@/lib/storage";
+import { IMMUTABLE_CACHE_CONTROL, LISTING_IMAGES_BUCKET, publicStorageUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES, type ListingImageValue } from "@/lib/validations/listing";
@@ -83,7 +83,7 @@ export function ImageUploader({ value, onChange, savedPaths, onBusyChange, inval
 
     const { error } = await createClient()
       .storage.from(ticket.bucket)
-      .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+      .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, cacheControl: IMMUTABLE_CACHE_CONTROL });
     if (error) return fail("Upload failed. Please try again.");
 
     commit([...valueRef.current, { path: ticket.path, isPrimary: false }]);

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,10 +20,8 @@ const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "accommodationDog · Unreal stays. Unbelievable experiences.",
     template: "%s · accommodationDog",
@@ -30,7 +29,6 @@ export const metadata: Metadata = {
   description:
     "A parody accommodation marketplace full of gloriously fictional places to stay. Browse, review and share them. Nothing here can actually be booked.",
   applicationName: "accommodationDog",
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "accommodationDog",

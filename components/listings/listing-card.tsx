@@ -27,7 +27,8 @@ export function ListingCard({
             fill
             sizes="(min-width: 1280px) 22vw, (min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            priority={priority}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
           />
         ) : (
           <div className="flex size-full items-center justify-center text-muted-foreground">

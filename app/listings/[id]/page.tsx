@@ -5,7 +5,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BookingCard } from "@/components/listings/booking-card";
-import { FavouriteButton, FavouritesProvider } from "@/components/listings/favourite-button";
+import { FavouriteButton } from "@/components/listings/favourite-button";
+import { Favourites } from "@/components/listings/favourites";
 import { AmenityList, listingFacts } from "@/components/listings/listing-details";
 import { ListingGallery } from "@/components/listings/listing-gallery";
 import { Rating, Stars } from "@/components/listings/rating";
@@ -19,9 +20,19 @@ import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 import { propertyTypeLabel } from "@/lib/listings/constants";
 import { getMyReview } from "@/lib/queries/account";
-import { getFavouriteState } from "@/lib/queries/favourites";
-import { getListing, getListingReviews, type ListingDetail } from "@/lib/queries/listings";
+import { getListing, getListingReviews, getPopularListingIds, type ListingDetail } from "@/lib/queries/listings";
 import { formatRating, pluralize } from "@/lib/utils/format";
+
+/**
+ * Prebuilds the most popular listings, so shared links are served as static
+ * pages. Other listings get the instant App Shell on their first visit and are
+ * cached for the next one (ISR). Cache Components needs at least one entry, so
+ * an empty database yields a placeholder that renders the not-found page.
+ */
+export async function generateStaticParams() {
+  const ids = await getPopularListingIds(50);
+  return ids.length ? ids.map((id) => ({ id })) : [{ id: "00000000-0000-0000-0000-000000000000" }];
+}
 
 export async function generateMetadata({ params }: PageProps<"/listings/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -45,26 +56,30 @@ export async function generateMetadata({ params }: PageProps<"/listings/[id]">):
   };
 }
 
-export default function ListingPage({ params }: PageProps<"/listings/[id]">) {
-  return (
-    <main id="main" className="flex-1 pb-28 lg:pb-0">
-      <Suspense fallback={<ListingSkeleton />}>
-        <ListingView params={params} />
-      </Suspense>
-    </main>
-  );
-}
-
-async function ListingView({ params }: { params: PageProps<"/listings/[id]">["params"] }) {
+// The listing is read at the page level, outside any Suspense boundary, so a
+// prebuilt listing's content is part of its static HTML instead of being
+// streamed in and revealed by script (which delays the main photo). Listings
+// not prebuilt render on their first visit and are then cached.
+export default async function ListingPage({ params }: PageProps<"/listings/[id]">) {
   const { id } = await params;
   const listing = await getListing(id);
   if (!listing) notFound();
 
   return (
-    <FavouritesProvider state={getFavouriteState()}>
+    <main id="main" className="flex-1 pb-28 lg:pb-0">
+      <ListingView listing={listing} />
+    </main>
+  );
+}
+
+function ListingView({ listing }: { listing: ListingDetail }) {
+  return (
+    <Favourites>
       <article className="page-container max-w-7xl pt-6 sm:pt-8">
         <ViewTracker listingId={listing.id} />
-        <PublishNotice />
+        <Suspense>
+          <PublishNotice />
+        </Suspense>
 
         <header className="grid gap-3">
           <h1 className="font-heading text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{listing.title}</h1>
@@ -120,7 +135,7 @@ async function ListingView({ params }: { params: PageProps<"/listings/[id]">["pa
           <ReportButton targetType="listing" targetId={listing.id} />
         </div>
       </article>
-    </FavouritesProvider>
+    </Favourites>
   );
 }
 
@@ -295,23 +310,5 @@ function Location({ listing }: { listing: ListingDetail }) {
         </div>
       </div>
     </Section>
-  );
-}
-
-function ListingSkeleton() {
-  return (
-    <div className="page-container max-w-7xl pt-6 sm:pt-8" aria-busy="true" aria-label="Loading listing">
-      <div className="h-9 w-2/3 rounded bg-muted" />
-      <div className="mt-3 h-5 w-1/3 rounded bg-muted" />
-      <div className="mt-6 aspect-[4/3] animate-pulse rounded-2xl bg-muted md:aspect-auto md:h-[min(60vh,32rem)]" />
-      <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-20">
-        <div className="grid content-start gap-3">
-          <div className="h-6 w-1/2 rounded bg-muted" />
-          <div className="h-4 w-1/3 rounded bg-muted" />
-          <div className="mt-6 h-20 rounded-xl bg-muted" />
-        </div>
-        <div className="h-80 rounded-2xl bg-muted" />
-      </div>
-    </div>
   );
 }
