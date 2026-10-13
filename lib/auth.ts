@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -16,6 +17,9 @@ export type CurrentUser = {
  * per request. Reads cookies, so callers must render inside <Suspense>.
  */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  // Validating the session compares token expiry with the current time, so it
+  // must never be prerendered (not even into a per-session prefetch shell).
+  await connection();
   if (!isSupabaseConfigured) return null;
 
   const supabase = await createClient();

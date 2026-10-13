@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut, Menu } from "lucide-react";
+import { Heart, LayoutList, LogOut, Menu, Plus, Settings, UserRound } from "lucide-react";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -40,6 +41,37 @@ export function UserMenu({
           <span className="truncate font-medium text-foreground">@{username}</span>
           <span className="truncate text-xs text-muted-foreground">{email}</span>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href={`/users/${username}`}>
+            <UserRound aria-hidden="true" />
+            Profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/my-listings">
+            <LayoutList aria-hidden="true" />
+            My listings
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/saved">
+            <Heart aria-hidden="true" />
+            Saved
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="md:hidden">
+          <Link href="/create">
+            <Plus aria-hidden="true" />
+            Create listing
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/settings/profile">
+            <Settings aria-hidden="true" />
+            Edit profile
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <form action={logOut}>
           {/* Keep the menu (and so the form) mounted while the action runs. */}

@@ -23,9 +23,9 @@ export function Logo({ className }: { className?: string }) {
   return (
     <Link
       href="/"
-      className={cn("inline-flex items-center gap-2 rounded-lg font-heading text-xl tracking-tight", className)}
+      className={cn("inline-flex items-center gap-2 rounded-lg font-heading text-lg tracking-tight sm:text-xl", className)}
     >
-      <LogoMark />
+      <LogoMark className="size-7 sm:size-8" />
       <span className="font-semibold">
         accommodation<span className="text-brand">Dog</span>
       </span>

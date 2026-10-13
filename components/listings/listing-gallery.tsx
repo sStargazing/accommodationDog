@@ -9,7 +9,7 @@ import type { ListingImage } from "@/lib/queries/listings";
 import { cn } from "@/lib/utils";
 
 /** Grid cell spans for the desktop mosaic, by number of photos. */
-function mosaicClasses(count: number): string[] {
+export function mosaicClasses(count: number): string[] {
   if (count === 1) return ["col-span-4 row-span-2"];
   if (count === 2) return ["col-span-2 row-span-2", "col-span-2 row-span-2"];
   if (count === 3) return ["col-span-2 row-span-2", "col-span-2", "col-span-2"];

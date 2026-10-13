@@ -11,7 +11,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 // visitors. Mutations (Phase 3/4) invalidate with updateTag("listings") etc.
 const PUBLIC_CACHE = { stale: 30, revalidate: 60, expire: 3600 } as const;
 
-export type ListingImage = { id: string; url: string; isPrimary: boolean };
+export type ListingImage = { id: string; path: string; url: string; isPrimary: boolean };
 
 export type ListingSummary = {
   id: string;
@@ -34,11 +34,46 @@ export type ListingSearchResult = {
 
 type ImageRow = { id: string; storage_path: string; is_primary: boolean; display_order: number };
 
-const toImage = (row: ImageRow): ListingImage => ({
+export const toImage = (row: ImageRow): ListingImage => ({
   id: row.id,
+  path: row.storage_path,
   url: publicStorageUrl(LISTING_IMAGES_BUCKET, row.storage_path),
   isPrimary: row.is_primary,
 });
+
+/** Columns for a listing card. Callers limit listing_images to the cover photo. */
+export const SUMMARY_SELECT =
+  "id, title, city, country, property_type, nightly_price, rating_avg, review_count, listing_images(id, storage_path, is_primary, display_order)" as const;
+
+type SummaryRow = {
+  id: string;
+  title: string;
+  city: string;
+  country: string;
+  property_type: string;
+  nightly_price: number;
+  rating_avg: number | null;
+  review_count: number;
+  listing_images: ImageRow[];
+};
+
+export function toSummary(row: SummaryRow): ListingSummary {
+  // Prefer the cover photo even if the query didn't sort images.
+  const cover = [...row.listing_images].sort(
+    (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.display_order - b.display_order,
+  )[0];
+  return {
+    id: row.id,
+    title: row.title,
+    city: row.city,
+    country: row.country,
+    propertyType: row.property_type,
+    nightlyPrice: Number(row.nightly_price),
+    ratingAvg: row.rating_avg === null ? null : Number(row.rating_avg),
+    reviewCount: row.review_count,
+    image: cover ? toImage(cover) : null,
+  };
+}
 
 export async function searchListings(filters: ListingFilters): Promise<ListingSearchResult> {
   "use cache";
@@ -51,10 +86,7 @@ export async function searchListings(filters: ListingFilters): Promise<ListingSe
   const from = (filters.page - 1) * LISTINGS_PAGE_SIZE;
   let query = createPublicClient()
     .from("listings")
-    .select(
-      "id, title, city, country, property_type, nightly_price, rating_avg, review_count, listing_images(id, storage_path, is_primary, display_order)",
-      { count: "exact" },
-    )
+    .select(SUMMARY_SELECT, { count: "exact" })
     .eq("status", "published")
     // Only the cover image: primary first, then by position.
     .order("is_primary", { referencedTable: "listing_images", ascending: false })
@@ -100,17 +132,7 @@ export async function searchListings(filters: ListingFilters): Promise<ListingSe
 
   const total = count ?? 0;
   return {
-    listings: data.map((row) => ({
-      id: row.id,
-      title: row.title,
-      city: row.city,
-      country: row.country,
-      propertyType: row.property_type,
-      nightlyPrice: Number(row.nightly_price),
-      ratingAvg: row.rating_avg === null ? null : Number(row.rating_avg),
-      reviewCount: row.review_count,
-      image: row.listing_images[0] ? toImage(row.listing_images[0]) : null,
-    })),
+    listings: data.map(toSummary),
     total,
     page: filters.page,
     pageCount: Math.ceil(total / LISTINGS_PAGE_SIZE),
@@ -199,7 +221,7 @@ export type Review = {
 
 export async function getListingReviews(listingId: string): Promise<Review[]> {
   "use cache";
-  cacheTag(`reviews:${listingId}`);
+  cacheTag("reviews", `reviews:${listingId}`);
   cacheLife(PUBLIC_CACHE);
 
   if (!isSupabaseConfigured || !uuid.safeParse(listingId).success) return [];

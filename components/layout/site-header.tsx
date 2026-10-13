@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,14 @@ export function SiteHeader() {
             className="hidden rounded-full px-4 py-2.5 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:block"
           >
             Explore
+          </Link>
+          {/* Signed-out visitors are sent to log in first (see proxy.ts). */}
+          <Link
+            href="/create"
+            className="hidden items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 md:inline-flex"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            Create listing
           </Link>
           {/* The session is read per request, so it streams in after the static shell. */}
           <Suspense fallback={<div className="h-10 w-[4.5rem] rounded-full bg-muted sm:w-40" aria-hidden="true" />}>

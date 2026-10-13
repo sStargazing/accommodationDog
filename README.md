@@ -24,7 +24,7 @@ npm install
 ### 2. Create a Supabase project
 
 1. Create a project at [supabase.com](https://supabase.com/dashboard).
-2. Apply the schema. Either paste `supabase/migrations/20261013000000_initial_schema.sql` into the **SQL Editor** and run it, or use the CLI:
+2. Apply the schema: run each file in `supabase/migrations/` **in filename order**. Either paste each one into the **SQL Editor** (a new query per file) and run it, or use the CLI:
    ```bash
    npx supabase login
    npx supabase link --project-ref <project-ref>
@@ -95,7 +95,7 @@ select id from public.profiles where username = 'your_username';
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Generate route types, then `tsc --noEmit` |
 | `npm test` | Unit tests and database/RLS tests (no Docker needed) |
-| `npm run test:e2e` | Playwright tests against a production build, using local Google Chrome (`npx playwright install chrome` on CI). The listing tests skip themselves when the database has no listings. |
+| `npm run test:e2e` | Playwright tests against a production build, using local Google Chrome (`npx playwright install chrome` on CI). The listing tests skip themselves when the database has no listings; the create/edit/delete flow needs `SUPABASE_SECRET_KEY` to create (and afterwards delete) throwaway test users. |
 | `npm run seed` | Seed development data (see above) |
 
 ### About the database tests
@@ -112,8 +112,10 @@ select id from public.profiles where username = 'your_username';
 - **Cache Components.** Anything that reads the session (for example the header's account menu) renders inside `<Suspense>`, so pages keep a static shell that loads instantly.
 - **Public data is cached.** Listing queries run through a cookie-free Supabase client inside `"use cache"` (tagged `listings`, `listing:<id>` and `reviews:<id>`, refreshed within about a minute), so shared listing links load fast. Per-user data such as favourites streams in separately.
 - **Search and filters** are plain `GET` forms and links, so every result page has a shareable URL and works without JavaScript. Text search splits the query into words, and every word must match the title, city, country or description (case-insensitive, partial matches). Check-in and check-out dates only prefill the simulated booking card; there is no availability.
+- **Listing writes are atomic.** `create_listing` / `update_listing` (SECURITY INVOKER database functions) save a listing and its photos in one transaction, so RLS, column grants, constraints and rate limits still apply, and a listing can never exist without photos or with a half-applied reorder.
+- **Photo uploads** go straight from the browser to Supabase Storage via one-time signed upload URLs, which avoids serverless request-size limits. The server issues each URL only after checking the user, the declared type and the size, and it picks a random file name in the user's folder. Before a photo is attached to a listing (or an avatar to a profile), the server range-reads the file's first bytes to confirm it really is a JPEG, PNG or WebP under the size limit; anything else is deleted. Photos removed while editing are deleted from Storage when the listing is saved. Uploads abandoned mid-form are not cleaned up automatically yet.
 - **The simulated booking** is entirely client-side: it calculates `nightly × nights + cleaning + service` and opens a joke dialog. It never sends a request (an e2e test checks this) and never asks for payment details.
-- **Forms.** The auth forms use Server Actions with `useActionState`, so they work before JavaScript loads. React Hook Form is reserved for the multi-step create-listing form.
+- **Forms.** The auth and profile forms use Server Actions with `useActionState`, so they work before JavaScript loads. The multi-step listing form uses React Hook Form with the same Zod schema (`lib/validations/listing.ts`) that the server re-validates with.
 - **Images** live in public-read Storage buckets (`listing-images`, `avatars`) under `<user id>/<random uuid>.<ext>`. Bucket limits enforce type (JPEG/PNG/WebP) and size (5 MB / 2 MB), and policies restrict writes to the owner's folder.
 - **XSS.** User content is rendered through React's escaping only. Never use `dangerouslySetInnerHTML` for user content.
 
@@ -124,11 +126,15 @@ app/                 Routes (App Router)
   (auth)/            login, signup, forgot-password, reset-password
   auth/confirm/      Email link handler
 components/
-  forms/             Form primitives and auth forms
+  forms/             Form primitives, auth, profile and listing forms
   layout/            Header, footer, logo, user menu
+  listings/          Cards, gallery, booking card, sharing, favourites
+  search/            Search form, filters, sorting, pagination
   ui/                shadcn/ui components
 lib/
-  actions/           Server Actions
+  actions/           Server Actions (auth, listings, uploads, profile)
+  queries/           Data reads (public cached, and per-user)
+  images/            Upload verification
   supabase/          Browser, server and proxy clients
   validations/       Zod schemas
   utils/             Helpers
@@ -145,6 +151,6 @@ proxy.ts             Session refresh + optimistic route protection
 
 - [x] **Phase 1, Foundation:** app shell, branding, schema and RLS, authentication
 - [x] **Phase 2, Listing experience:** home feed, listing cards and detail page, galleries, search, filters, seed data. Favourite hearts, sharing and the simulated Reserve also work, because the card and detail designs include them.
-- [ ] **Phase 3, User-generated content:** multi-step create form, uploads, editing, profiles, My Listings
-- [ ] **Phase 4, Social:** writing reviews, `/saved` page, OG preview images, reporting and moderation
+- [x] **Phase 3, User-generated content:** multi-step create and edit form, photo uploads, deletion, public profiles, Edit profile, My Listings and Saved
+- [ ] **Phase 4, Social:** writing reviews, OG preview images, reporting and moderation
 - [ ] **Phase 5, Polish and deployment:** metadata and OG images, sitemap, performance, Vercel deploy

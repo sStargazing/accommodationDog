@@ -1,17 +1,21 @@
 import { format, parseISO } from "date-fns";
-import { Info, MapPin } from "lucide-react";
+import { Info, MapPin, Pencil } from "lucide-react";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BookingCard } from "@/components/listings/booking-card";
 import { FavouriteButton, FavouritesProvider } from "@/components/listings/favourite-button";
-import { AMENITY_ICONS, CUSTOM_AMENITY_ICON } from "@/components/listings/icons";
+import { AmenityList, listingFacts } from "@/components/listings/listing-details";
 import { ListingGallery } from "@/components/listings/listing-gallery";
 import { Rating, Stars } from "@/components/listings/rating";
 import { ShareButton } from "@/components/listings/share-button";
 import { UserAvatar } from "@/components/listings/user-avatar";
+import { PublishNotice } from "@/components/listings/publish-notice";
 import { ViewTracker } from "@/components/listings/view-tracker";
-import { amenityLabel, propertyTypeLabel } from "@/lib/listings/constants";
+import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/auth";
+import { propertyTypeLabel } from "@/lib/listings/constants";
 import { getFavouriteState } from "@/lib/queries/favourites";
 import { getListing, getListingReviews, type ListingDetail } from "@/lib/queries/listings";
 import { formatRating, pluralize } from "@/lib/utils/format";
@@ -60,6 +64,7 @@ async function ListingView({ params }: { params: PageProps<"/listings/[id]">["pa
     <FavouritesProvider state={getFavouriteState()}>
       <article className="page-container max-w-7xl pt-6 sm:pt-8">
         <ViewTracker listingId={listing.id} />
+        <PublishNotice />
 
         <header className="grid gap-3">
           <h1 className="font-heading text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{listing.title}</h1>
@@ -72,6 +77,9 @@ async function ListingView({ params }: { params: PageProps<"/listings/[id]">["pa
               </a>
             </p>
             <div className="-mr-3 flex items-center">
+              <Suspense>
+                <OwnerEditLink listingId={listing.id} hostId={listing.host.id} />
+              </Suspense>
               <ShareButton listingId={listing.id} title={listing.title} imageUrl={listing.images[0]?.url} />
               <FavouriteButton listingId={listing.id} listingTitle={listing.title} variant="inline" />
             </div>
@@ -113,6 +121,21 @@ async function ListingView({ params }: { params: PageProps<"/listings/[id]">["pa
   );
 }
 
+/** Shown only to the listing's owner. */
+async function OwnerEditLink({ listingId, hostId }: { listingId: string; hostId: string }) {
+  const user = await getCurrentUser();
+  if (user?.id !== hostId) return null;
+  return (
+    <Button asChild variant="ghost" className="h-9 rounded-lg px-3">
+      <Link href={`/listings/${listingId}/edit`}>
+        <Pencil aria-hidden="true" />
+        <span className="hidden sm:inline">Edit listing</span>
+        <span className="sr-only sm:hidden">Edit listing</span>
+      </Link>
+    </Button>
+  );
+}
+
 function FictionalNotice() {
   return (
     <aside
@@ -140,24 +163,22 @@ function Section({ title, id, children }: { title: string; id?: string; children
 }
 
 function Overview({ listing }: { listing: ListingDetail }) {
-  const facts = [
-    pluralize(listing.maxGuests, "guest"),
-    pluralize(listing.bedrooms, "bedroom"),
-    pluralize(listing.beds, "bed"),
-    pluralize(listing.bathrooms, "bath"),
-  ];
-
   return (
     <div className="pb-8">
       <h2 className="text-xl font-semibold">
         {propertyTypeLabel(listing.propertyType)} in {listing.city}, {listing.country}
       </h2>
-      <p className="mt-1 text-muted-foreground">{facts.join(" · ")}</p>
+      <p className="mt-1 text-muted-foreground">{listingFacts(listing)}</p>
 
       <div className="mt-6 flex items-center gap-4 rounded-xl border p-4">
         <UserAvatar username={listing.host.username} avatarUrl={listing.host.avatarUrl} className="size-12" />
         <div>
-          <p className="font-semibold">Hosted by @{listing.host.username}</p>
+          <p className="font-semibold">
+            Hosted by{" "}
+            <Link href={`/users/${listing.host.username}`} className="hover:underline">
+              @{listing.host.username}
+            </Link>
+          </p>
           <p className="text-sm text-muted-foreground">
             Hosting imaginary guests since {format(parseISO(listing.host.joinedAt), "MMMM yyyy")}
           </p>
@@ -173,23 +194,7 @@ function Amenities({ listing }: { listing: ListingDetail }) {
 
   return (
     <Section title="What this place offers">
-      <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-        {standard.map((value) => {
-          const Icon = AMENITY_ICONS[value] ?? CUSTOM_AMENITY_ICON;
-          return (
-            <li key={value} className="flex items-center gap-4">
-              <Icon className="size-6 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-              {amenityLabel(value)}
-            </li>
-          );
-        })}
-        {custom.map((value) => (
-          <li key={`custom-${value}`} className="flex items-center gap-4">
-            <CUSTOM_AMENITY_ICON className="size-6 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-            {value}
-          </li>
-        ))}
-      </ul>
+      <AmenityList amenities={listing.amenities} />
     </Section>
   );
 }
@@ -217,7 +222,11 @@ async function Reviews({ listing }: { listing: ListingDetail }) {
               <div className="flex items-center gap-3">
                 <UserAvatar username={review.author.username} avatarUrl={review.author.avatarUrl} />
                 <div>
-                  <p className="font-semibold">@{review.author.username}</p>
+                  <p className="font-semibold">
+                    <Link href={`/users/${review.author.username}`} className="hover:underline">
+                      @{review.author.username}
+                    </Link>
+                  </p>
                   <p className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Stars rating={review.rating} />
                     <time dateTime={review.createdAt}>{format(parseISO(review.createdAt), "MMMM yyyy")}</time>

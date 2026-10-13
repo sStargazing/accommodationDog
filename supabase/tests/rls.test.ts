@@ -317,3 +317,124 @@ describe("reports and moderation", () => {
     await expect(asUser(db, reporter, (tx) => tx.query(report))).rejects.toThrow(/reports_one_per_reporter/);
   });
 });
+
+describe("listing write functions", () => {
+  const listingJson = JSON.stringify({
+    title: "Moon Base With Disappointing Gravity",
+    description: "Low gravity, high expectations.",
+    property_type: "other",
+    city: "Tranquility",
+    country: "The Moon",
+    nightly_price: 999.99,
+    cleaning_fee: 0,
+    service_fee: 50,
+    max_guests: 2,
+    bedrooms: 1,
+    beds: 1,
+    bathrooms: 0.5,
+    amenities: { standard: ["wifi"], custom: ["Earthrise"] },
+  });
+  const photo = (owner: string) => `${owner}/${crypto.randomUUID()}.webp`;
+  const imagesJson = (paths: string[], primary = 0) =>
+    JSON.stringify(paths.map((storage_path, i) => ({ storage_path, is_primary: i === primary })));
+  const imagesOf = async (id: string) =>
+    (
+      await db.query<{ storage_path: string; display_order: number; is_primary: boolean }>(
+        "select storage_path, display_order, is_primary from public.listing_images where listing_id = $1 order by display_order",
+        [id],
+      )
+    ).rows;
+
+  it("create a listing and its photos atomically", async () => {
+    const owner = await newUser();
+    const paths = [photo(owner), photo(owner)];
+    const { rows } = await asUser(db, owner, (tx) =>
+      tx.query<{ id: string }>("select public.create_listing($1, $2) as id", [listingJson, imagesJson(paths, 1)]),
+    );
+    const id = rows[0].id;
+
+    const listing = await db.query<{ user_id: string; nightly_price: string }>(
+      "select user_id, nightly_price from public.listings where id = $1",
+      [id],
+    );
+    expect(listing.rows[0]).toEqual({ user_id: owner, nightly_price: "999.99" });
+    expect(await imagesOf(id)).toEqual([
+      { storage_path: paths[0], display_order: 0, is_primary: false },
+      { storage_path: paths[1], display_order: 1, is_primary: true },
+    ]);
+  });
+
+  it("roll back the listing when the photos are invalid", async () => {
+    const owner = await newUser();
+    const other = await newUser();
+    const count = async () =>
+      Number((await db.query<{ n: string }>("select count(*) as n from public.listings where user_id = $1", [owner])).rows[0].n);
+
+    const attempts = [
+      [imagesJson([]), /between 1 and 10/],
+      [imagesJson(Array.from({ length: 11 }, () => photo(owner))), /between 1 and 10/],
+      [JSON.stringify([{ storage_path: photo(owner), is_primary: false }]), /exactly one cover/],
+      [imagesJson([photo(other)]), /row-level security/],
+    ] as const;
+    for (const [images, error] of attempts) {
+      await expect(
+        asUser(db, owner, (tx) => tx.query("select public.create_listing($1, $2)", [listingJson, images])),
+      ).rejects.toThrow(error);
+    }
+    expect(await count()).toBe(0);
+  });
+
+  it("cannot be called anonymously", async () => {
+    await expect(
+      asUser(db, null, (tx) => tx.query("select public.create_listing($1, $2)", [listingJson, imagesJson([])])),
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("update, reorder and report removed photos for the owner only", async () => {
+    const owner = await newUser();
+    const intruder = await newUser();
+    const [a, b, c] = [photo(owner), photo(owner), photo(owner)];
+    const id = (
+      await asUser(db, owner, (tx) =>
+        tx.query<{ id: string }>("select public.create_listing($1, $2) as id", [listingJson, imagesJson([a, b, c])]),
+      )
+    ).rows[0].id;
+
+    const renamed = JSON.stringify({ ...JSON.parse(listingJson), title: "Moon Base, Now With Gravity" });
+    const { rows } = await asUser(db, owner, (tx) =>
+      tx.query<{ removed: string[] }>("select public.update_listing($1, $2, $3) as removed", [
+        id,
+        renamed,
+        imagesJson([c, a], 0),
+      ]),
+    );
+    expect(rows[0].removed).toEqual([b]);
+    expect(await imagesOf(id)).toEqual([
+      { storage_path: c, display_order: 0, is_primary: true },
+      { storage_path: a, display_order: 1, is_primary: false },
+    ]);
+
+    await expect(
+      asUser(db, intruder, (tx) =>
+        tx.query("select public.update_listing($1, $2, $3)", [id, renamed, imagesJson([photo(intruder)])]),
+      ),
+    ).rejects.toThrow(/Listing not found/);
+    const title = await db.query<{ title: string }>("select title from public.listings where id = $1", [id]);
+    expect(title.rows[0].title).toBe("Moon Base, Now With Gravity");
+  });
+});
+
+describe("avatars", () => {
+  it("must point at the owner's folder in the avatars bucket", async () => {
+    const user = await newUser();
+    const other = await newUser();
+    const avatar = (folder: string) =>
+      `https://example.supabase.co/storage/v1/object/public/avatars/${folder}/${crypto.randomUUID()}.webp`;
+    const setAvatar = (url: string) =>
+      asUser(db, user, (tx) => tx.query("update public.profiles set avatar_url = $1 where id = $2", [url, user]));
+
+    await setAvatar(avatar(user));
+    await expect(setAvatar(avatar(other))).rejects.toThrow(/profiles_avatar_url_storage/);
+    await expect(setAvatar("https://tracker.example/pixel.gif")).rejects.toThrow(/profiles_avatar_url_storage/);
+  });
+});

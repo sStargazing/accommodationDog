@@ -213,6 +213,18 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      create_listing: {
+        Args: { listing: Json; images: Json };
+        Returns: string;
+      };
+      update_listing: {
+        Args: { target_listing_id: string; listing: Json; images: Json };
+        Returns: string[];
+      };
+      save_listing_images: {
+        Args: { target_listing_id: string; images: Json };
+        Returns: string[];
+      };
       increment_listing_view: {
         Args: { target_listing_id: string };
         Returns: undefined;
