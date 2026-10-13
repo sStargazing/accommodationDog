@@ -93,7 +93,6 @@ test("create, share, edit and delete a listing", async ({ page, browser, context
   const listingUrl = page.url().split("?")[0];
   await expect(page.getByText("Your listing is live.")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
-  await expect(page.getByText("This is a fictional listing.")).toBeVisible();
   await expect(page.getByRole("main").getByText("Leak-proof (mostly)")).toBeVisible();
   await expect(page.getByRole("link", { name: "Edit listing" })).toBeVisible();
 

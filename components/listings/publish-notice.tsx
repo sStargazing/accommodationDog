@@ -26,8 +26,7 @@ export function PublishNotice() {
       <p className="flex-1">
         {published ? (
           <>
-            <strong className="font-semibold">Your listing is live.</strong> Share the link so everyone can admire a
-            place they will never visit.
+            <strong className="font-semibold">Your listing is live.</strong> Share the link so everyone can see it.
           </>
         ) : (
           <strong className="font-semibold">Your changes have been saved.</strong>

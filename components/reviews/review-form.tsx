@@ -51,7 +51,6 @@ function ReviewEditor({
     <form action={action} className="grid gap-5 rounded-2xl border p-5 sm:p-6" noValidate>
       <div>
         <h3 className="text-lg font-semibold">{existing ? "Edit your review" : "Write a review"}</h3>
-        <p className="text-sm text-muted-foreground">You don&apos;t need to have stayed. Nobody has.</p>
       </div>
       {state.message && <FormMessage tone="error">{state.message}</FormMessage>}
       <input type="hidden" name="listingId" value={listingId} />

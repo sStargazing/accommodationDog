@@ -148,7 +148,6 @@ function SimulatedBooking({
         <Button size="lg" className="mt-4 w-full" onClick={() => setReserveOpen(true)}>
           Reserve
         </Button>
-        <p className="mt-3 text-center text-sm text-muted-foreground">You won&apos;t be charged. You can&apos;t be charged.</p>
 
         {price ? (
           <dl className="mt-5 grid gap-3 text-[0.9375rem]">
@@ -167,12 +166,12 @@ function SimulatedBooking({
               <dd>{formatPrice(price.serviceFee)}</dd>
             </div>
             <div className="mt-1 flex justify-between gap-4 border-t pt-4 font-semibold">
-              <dt>Total (fictional)</dt>
+              <dt>Total</dt>
               <dd>{formatPrice(price.total)}</dd>
             </div>
           </dl>
         ) : (
-          <p className="mt-5 text-center text-sm text-muted-foreground">Add dates to see the (entirely made-up) total.</p>
+          <p className="mt-5 text-center text-sm text-muted-foreground">Add dates to see the total.</p>
         )}
       </section>
 

@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { Info, MapPin, Pencil } from "lucide-react";
+import { MapPin, Pencil } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -105,7 +105,6 @@ function ListingView({ listing }: { listing: ListingDetail }) {
           <ListingGallery images={listing.images} title={listing.title} />
         </div>
 
-        <FictionalNotice />
 
         <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-20">
           <div className="min-w-0">
@@ -165,7 +164,7 @@ async function ReviewComposer({ listingId, hostId }: { listingId: string; hostId
         >
           Log in
         </Link>{" "}
-        to leave a review. No stay required, obviously.
+        to leave a review.
       </p>
     );
   }
@@ -179,21 +178,6 @@ async function ReviewComposer({ listingId, hostId }: { listingId: string; hostId
   const existing = await getMyReview(listingId, user.id);
   // Remount after a save so the form shows the stored review.
   return <ReviewForm key={existing?.updatedAt ?? "new"} listingId={listingId} existing={existing} />;
-}
-
-function FictionalNotice() {
-  return (
-    <aside
-      aria-label="Fictional listing notice"
-      className="mt-6 flex gap-3 rounded-xl border border-brand/25 bg-brand/5 px-4 py-3.5 text-sm"
-    >
-      <Info className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
-      <p>
-        <strong className="font-semibold">This is a fictional listing.</strong> The place, the host, the prices and the
-        reviews are all made up for fun. Nothing here can be booked, paid for or visited.
-      </p>
-    </aside>
-  );
 }
 
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
@@ -225,7 +209,7 @@ function Overview({ listing }: { listing: ListingDetail }) {
             </Link>
           </p>
           <p className="text-sm text-muted-foreground">
-            Hosting imaginary guests since {format(parseISO(listing.host.joinedAt), "MMMM yyyy")}
+            Hosting since {format(parseISO(listing.host.joinedAt), "MMMM yyyy")}
           </p>
         </div>
       </div>
@@ -253,9 +237,6 @@ async function Reviews({ listing }: { listing: ListingDetail }) {
 
   return (
     <Section title={heading} id="reviews">
-      <p className="-mt-3 mb-6 text-sm text-muted-foreground">
-        Comedic reviews by fellow fantasists. Nobody has actually stayed here, because nobody can.
-      </p>
       <div className="mb-10 max-w-2xl">
         {/* Depends on who's looking, so it streams in separately from the cached reviews. */}
         <Suspense fallback={<div className="h-14 rounded-2xl bg-muted/60" aria-hidden="true" />}>
@@ -264,7 +245,7 @@ async function Reviews({ listing }: { listing: ListingDetail }) {
       </div>
       {reviews.length === 0 ? (
         <p className="rounded-xl border border-dashed px-6 py-10 text-center text-muted-foreground">
-          No reviews yet. This place is so exclusive that not even imaginary guests have arrived.
+          No reviews yet. Be the first to leave one.
         </p>
       ) : (
         <ul className="grid gap-x-16 gap-y-10 md:grid-cols-2">
@@ -296,16 +277,12 @@ async function Reviews({ listing }: { listing: ListingDetail }) {
 
 function Location({ listing }: { listing: ListingDetail }) {
   return (
-    <Section title="Where you'll (not) be" id="location">
+    <Section title="Where you'll be" id="location">
       <div className="flex items-start gap-4 rounded-xl bg-muted/60 p-5">
         <MapPin className="mt-0.5 size-6 shrink-0 text-brand" aria-hidden="true" />
         <div>
           <p className="font-semibold">
             {listing.city}, {listing.country}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            That&apos;s as precise as it gets. This listing is fictional, so there is no street address, no map pin and
-            no front door.
           </p>
         </div>
       </div>

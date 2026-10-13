@@ -38,14 +38,13 @@ test("search, category and sort narrow the feed via the URL", async ({ page }) =
   expect(values).toEqual([...values].sort((a, b) => a - b));
 });
 
-test("listing page discloses that it is fictional and calculates a price", async ({ page }) => {
+test("listing page calculates a price", async ({ page }) => {
   const href = await firstListingHref(page);
   await page.goto(`${href}?checkin=2026-12-01&checkout=2026-12-04&guests=1`);
 
-  await expect(page.getByText("This is a fictional listing.")).toBeVisible();
   const booking = page.locator("#booking");
   await expect(booking.getByText(/× 3 nights/)).toBeVisible();
-  await expect(booking.getByText("Total (fictional)")).toBeVisible();
+  await expect(booking.getByText("Total", { exact: true })).toBeVisible();
 });
 
 test("reserving is simulated and never contacts the server", async ({ page }) => {

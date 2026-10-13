@@ -35,7 +35,7 @@ export function ShareButton({ listingId, title, imageUrl }: { listingId: string;
 
   async function shareNatively() {
     try {
-      await navigator.share({ title, text: `${title}: a fictional stay on accommodationDog`, url: url() });
+      await navigator.share({ title, text: `${title} on accommodationDog`, url: url() });
     } catch {
       // Dismissed by the user, or not allowed; nothing to do.
     }
@@ -56,7 +56,7 @@ export function ShareButton({ listingId, title, imageUrl }: { listingId: string;
       <DialogContent className="gap-5 p-6 sm:max-w-md">
         <div className="grid gap-1">
           <DialogTitle className="text-xl font-semibold">Share this stay</DialogTitle>
-          <DialogDescription>Spread the word about somewhere nobody can visit.</DialogDescription>
+          <DialogDescription>Send this stay to a friend.</DialogDescription>
         </div>
         <div className="flex items-center gap-3">
           {imageUrl && (
