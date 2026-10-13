@@ -79,7 +79,7 @@ Seed users have `@seed.accommodationdog.invalid` emails and random passwords, so
 
 ### Making someone an admin
 
-Admins are listed in `public.admin_users`, which has no API access at all. Add one from the SQL editor:
+Admins can open **/admin** (also linked from their account menu) to review reports and remove reported listings or reviews. Admins are listed in `public.admin_users`, which has no API access at all. Add one from the SQL editor:
 
 ```sql
 insert into public.admin_users (user_id)
@@ -95,7 +95,7 @@ select id from public.profiles where username = 'your_username';
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Generate route types, then `tsc --noEmit` |
 | `npm test` | Unit tests and database/RLS tests (no Docker needed) |
-| `npm run test:e2e` | Playwright tests against a production build, using local Google Chrome (`npx playwright install chrome` on CI). The listing tests skip themselves when the database has no listings; the create/edit/delete flow needs `SUPABASE_SECRET_KEY` to create (and afterwards delete) throwaway test users. |
+| `npm run test:e2e` | Playwright tests against a production build, using local Google Chrome (`npx playwright install chrome` on CI). The listing tests skip themselves when the database has no listings; the create/edit/delete, review and moderation flows need `SUPABASE_SECRET_KEY` to create (and afterwards delete) throwaway test users. |
 | `npm run seed` | Seed development data (see above) |
 
 ### About the database tests
@@ -117,6 +117,9 @@ select id from public.profiles where username = 'your_username';
 - **The simulated booking** is entirely client-side: it calculates `nightly × nights + cleaning + service` and opens a joke dialog. It never sends a request (an e2e test checks this) and never asks for payment details.
 - **Forms.** The auth and profile forms use Server Actions with `useActionState`, so they work before JavaScript loads. The multi-step listing form uses React Hook Form with the same Zod schema (`lib/validations/listing.ts`) that the server re-validates with.
 - **Images** live in public-read Storage buckets (`listing-images`, `avatars`) under `<user id>/<random uuid>.<ext>`. Bucket limits enforce type (JPEG/PNG/WebP) and size (5 MB / 2 MB), and policies restrict writes to the owner's folder.
+- **Reviews** are one per user per listing, never on your own listing (unique constraint + RLS), and the listing's rating and count are recalculated by a trigger. The listing page marks them as comedic, since nobody can actually stay.
+- **Reporting and moderation.** Signed-in users can report a listing or review (one report per item per user, rate limited). Reports are readable only by admins. Removing reported content deletes it (with a listing's photos) and resolves every open report about it. Admin checks happen in the Server Action and again in RLS.
+- **Social previews.** Each listing has a generated Open Graph image (`app/listings/[id]/opengraph-image.tsx`): cover photo, title, location, price, rating and a "Fictional listing" marker, served as a JPEG of about 120 KB so chat apps show it. The site has a default card too.
 - **XSS.** User content is rendered through React's escaping only. Never use `dangerouslySetInnerHTML` for user content.
 
 ## Project structure
@@ -152,5 +155,5 @@ proxy.ts             Session refresh + optimistic route protection
 - [x] **Phase 1, Foundation:** app shell, branding, schema and RLS, authentication
 - [x] **Phase 2, Listing experience:** home feed, listing cards and detail page, galleries, search, filters, seed data. Favourite hearts, sharing and the simulated Reserve also work, because the card and detail designs include them.
 - [x] **Phase 3, User-generated content:** multi-step create and edit form, photo uploads, deletion, public profiles, Edit profile, My Listings and Saved
-- [ ] **Phase 4, Social:** writing reviews, OG preview images, reporting and moderation
+- [x] **Phase 4, Social:** reviews (write, edit, delete), favourites, sharing with generated preview images, simulated booking, reporting and an admin moderation page
 - [ ] **Phase 5, Polish and deployment:** metadata and OG images, sitemap, performance, Vercel deploy

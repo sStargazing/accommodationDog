@@ -438,3 +438,19 @@ describe("avatars", () => {
     await expect(setAvatar("https://tracker.example/pixel.gif")).rejects.toThrow(/profiles_avatar_url_storage/);
   });
 });
+
+describe("moderation storage access", () => {
+  it("lets admins, and only admins, delete other users' photos", async () => {
+    const owner = await newUser();
+    const stranger = await newUser();
+    const admin = await newUser();
+    await db.query("insert into public.admin_users (user_id) values ($1)", [admin]);
+
+    const name = `${owner}/${crypto.randomUUID()}.webp`;
+    await asUser(db, owner, (tx) => tx.query(`insert into storage.objects (bucket_id, name) values ('listing-images', $1)`, [name]));
+    const remove = "delete from storage.objects where bucket_id = 'listing-images' and name = $1";
+
+    expect((await asUser(db, stranger, (tx) => tx.query(remove, [name]))).affectedRows).toBe(0);
+    expect((await asUser(db, admin, (tx) => tx.query(remove, [name]))).affectedRows).toBe(1);
+  });
+});

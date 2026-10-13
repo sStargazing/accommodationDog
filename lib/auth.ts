@@ -10,6 +10,8 @@ export type CurrentUser = {
   email: string;
   username: string;
   avatarUrl: string | null;
+  /** Listed in public.admin_users (checked by the database, not the client). */
+  isAdmin: boolean;
 };
 
 /**
@@ -26,11 +28,10 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username, avatar_url")
-    .eq("id", data.claims.sub)
-    .single();
+  const [{ data: profile }, { data: isAdmin }] = await Promise.all([
+    supabase.from("profiles").select("username, avatar_url").eq("id", data.claims.sub).single(),
+    supabase.rpc("is_admin"),
+  ]);
   if (!profile) return null;
 
   return {
@@ -38,6 +39,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     email: data.claims.email ?? "",
     username: profile.username,
     avatarUrl: profile.avatar_url,
+    isAdmin: isAdmin === true,
   };
 });
 

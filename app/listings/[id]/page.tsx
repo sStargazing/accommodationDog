@@ -13,9 +13,12 @@ import { ShareButton } from "@/components/listings/share-button";
 import { UserAvatar } from "@/components/listings/user-avatar";
 import { PublishNotice } from "@/components/listings/publish-notice";
 import { ViewTracker } from "@/components/listings/view-tracker";
+import { ReportButton } from "@/components/moderation/report-button";
+import { ReviewForm } from "@/components/reviews/review-form";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 import { propertyTypeLabel } from "@/lib/listings/constants";
+import { getMyReview } from "@/lib/queries/account";
 import { getFavouriteState } from "@/lib/queries/favourites";
 import { getListing, getListingReviews, type ListingDetail } from "@/lib/queries/listings";
 import { formatRating, pluralize } from "@/lib/utils/format";
@@ -28,8 +31,6 @@ export async function generateMetadata({ params }: PageProps<"/listings/[id]">):
   const description = `A fictional ${propertyTypeLabel(listing.propertyType).toLowerCase()} in ${listing.city}, ${listing.country}. ${listing.description}`
     .replace(/\s+/g, " ")
     .slice(0, 160);
-  const cover = listing.images[0];
-
   return {
     title: listing.title,
     description,
@@ -39,7 +40,6 @@ export async function generateMetadata({ params }: PageProps<"/listings/[id]">):
       title: `${listing.title} · accommodationDog`,
       description,
       url: `/listings/${listing.id}`,
-      images: cover ? [{ url: cover.url, alt: listing.title }] : undefined,
     },
     twitter: { card: "summary_large_image", title: listing.title, description },
   };
@@ -116,6 +116,9 @@ async function ListingView({ params }: { params: PageProps<"/listings/[id]">["pa
 
         <Reviews listing={listing} />
         <Location listing={listing} />
+        <div className="border-t py-6">
+          <ReportButton targetType="listing" targetId={listing.id} />
+        </div>
       </article>
     </FavouritesProvider>
   );
@@ -134,6 +137,33 @@ async function OwnerEditLink({ listingId, hostId }: { listingId: string; hostId:
       </Link>
     </Button>
   );
+}
+
+async function ReviewComposer({ listingId, hostId }: { listingId: string; hostId: string }) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return (
+      <p className="rounded-2xl border border-dashed px-5 py-4 text-sm">
+        <Link
+          href={`/login?next=${encodeURIComponent(`/listings/${listingId}#reviews`)}`}
+          className="font-semibold underline underline-offset-4"
+        >
+          Log in
+        </Link>{" "}
+        to leave a review. No stay required, obviously.
+      </p>
+    );
+  }
+  if (user.id === hostId) {
+    return (
+      <p className="rounded-2xl border border-dashed px-5 py-4 text-sm text-muted-foreground">
+        You can&apos;t review your own listing. We admire the confidence, though.
+      </p>
+    );
+  }
+  const existing = await getMyReview(listingId, user.id);
+  // Remount after a save so the form shows the stored review.
+  return <ReviewForm key={existing?.updatedAt ?? "new"} listingId={listingId} existing={existing} />;
 }
 
 function FictionalNotice() {
@@ -211,6 +241,12 @@ async function Reviews({ listing }: { listing: ListingDetail }) {
       <p className="-mt-3 mb-6 text-sm text-muted-foreground">
         Comedic reviews by fellow fantasists. Nobody has actually stayed here, because nobody can.
       </p>
+      <div className="mb-10 max-w-2xl">
+        {/* Depends on who's looking, so it streams in separately from the cached reviews. */}
+        <Suspense fallback={<div className="h-14 rounded-2xl bg-muted/60" aria-hidden="true" />}>
+          <ReviewComposer listingId={listing.id} hostId={listing.host.id} />
+        </Suspense>
+      </div>
       {reviews.length === 0 ? (
         <p className="rounded-xl border border-dashed px-6 py-10 text-center text-muted-foreground">
           No reviews yet. This place is so exclusive that not even imaginary guests have arrived.
@@ -234,6 +270,7 @@ async function Reviews({ listing }: { listing: ListingDetail }) {
                 </div>
               </div>
               <p className="mt-3 leading-relaxed whitespace-pre-line">{review.content}</p>
+              <ReportButton targetType="review" targetId={review.id} className="mt-2" />
             </li>
           ))}
         </ul>

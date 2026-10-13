@@ -105,3 +105,18 @@ export async function getSavedListings(userId: string): Promise<ListingSummary[]
   const byId = new Map(listings.map((row) => [row.id, toSummary(row)]));
   return ids.flatMap((id) => byId.get(id) ?? []);
 }
+
+export type OwnReview = { id: string; rating: number; content: string; updatedAt: string };
+
+/** The user's own review of a listing, if they've written one. */
+export async function getMyReview(listingId: string, userId: string): Promise<OwnReview | null> {
+  if (!z.uuid().safeParse(listingId).success) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("reviews")
+    .select("id, rating, content, updated_at")
+    .eq("listing_id", listingId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data ? { id: data.id, rating: data.rating, content: data.content, updatedAt: data.updated_at } : null;
+}

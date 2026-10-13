@@ -44,7 +44,7 @@ async function AccountNav() {
   const user = await getCurrentUser();
 
   if (user) {
-    return <UserMenu username={user.username} email={user.email} avatarUrl={user.avatarUrl} />;
+    return <UserMenu username={user.username} email={user.email} avatarUrl={user.avatarUrl} isAdmin={user.isAdmin} />;
   }
 
   return (

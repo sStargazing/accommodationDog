@@ -1,77 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { createTestUser, logIn, PNG, requireSecretKey } from "./support";
 
 // The full create → publish → share → edit → delete workflow against the real
-// Supabase project. Uses throwaway users created with the secret key (they're
-// deleted afterwards), so it only runs when SUPABASE_SECRET_KEY is available.
+// Supabase project, using throwaway users (see ./support).
 
-try {
-  process.loadEnvFile(".env.local");
-} catch {
-  // No .env.local (e.g. CI without secrets): the suite skips itself below.
-}
-
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const secretKey = process.env.SUPABASE_SECRET_KEY;
-
-// A real 1×1 PNG, and a text file pretending to be one.
-const PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
+// A text file pretending to be a PNG.
 const FAKE_PNG = Buffer.from("definitely not an image");
 
-type TestUser = { id: string; email: string; password: string; username: string };
-
-let admin: SupabaseClient;
-const users: TestUser[] = [];
-
-async function createTestUser(): Promise<TestUser> {
-  const suffix = randomUUID().slice(0, 8);
-  const user = {
-    email: `e2e-${suffix}@seed.accommodationdog.invalid`,
-    password: `${randomUUID()}A1!`,
-    username: `e2e_${suffix}`,
-  };
-  const { data, error } = await admin.auth.admin.createUser({
-    email: user.email,
-    password: user.password,
-    email_confirm: true,
-    user_metadata: { username: user.username },
-  });
-  if (error || !data.user) throw new Error(`Creating test user: ${error?.message}`);
-  const created = { ...user, id: data.user.id };
-  users.push(created);
-  return created;
-}
-
-async function logIn(page: Page, user: TestUser) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(user.email);
-  await page.getByLabel("Password").fill(user.password);
-  await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page.getByRole("button", { name: `Account menu for ${user.username}` })).toBeVisible();
-}
-
 test.describe.configure({ mode: "serial" });
-
-test.beforeAll(async ({}, testInfo) => {
-  test.skip(!url || !secretKey, "Needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY in .env.local");
-  // One run is enough; the layout itself is covered on mobile elsewhere.
-  test.skip(testInfo.project.name !== "desktop", "Runs on desktop only");
-  admin = createClient(url!, secretKey!, { auth: { persistSession: false, autoRefreshToken: false } });
-});
-
-test.afterAll(async () => {
-  for (const user of users) {
-    for (const bucket of ["listing-images", "avatars"]) {
-      const { data } = await admin.storage.from(bucket).list(user.id);
-      if (data?.length) await admin.storage.from(bucket).remove(data.map((file) => `${user.id}/${file.name}`));
-    }
-    await admin.auth.admin.deleteUser(user.id);
-  }
-});
+requireSecretKey();
 
 test("signed-out visitors are sent to log in before creating a listing", async ({ page }) => {
   await page.goto("/create");

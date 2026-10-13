@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, LayoutList, LogOut, Menu, Plus, Settings, UserRound } from "lucide-react";
+import { Flag, Heart, LayoutList, LogOut, Menu, Plus, Settings, UserRound } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -17,10 +17,12 @@ export function UserMenu({
   username,
   email,
   avatarUrl,
+  isAdmin,
 }: {
   username: string;
   email: string;
   avatarUrl: string | null;
+  isAdmin: boolean;
 }) {
   return (
     <DropdownMenu>
@@ -72,6 +74,14 @@ export function UserMenu({
             Edit profile
           </Link>
         </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link href="/admin">
+              <Flag aria-hidden="true" />
+              Moderation
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <form action={logOut}>
           {/* Keep the menu (and so the form) mounted while the action runs. */}
