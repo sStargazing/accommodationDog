@@ -2,7 +2,7 @@
 
 *Unreal stays. Unbelievable experiences.*
 
-A parody accommodation marketplace. People invent ridiculous places to stay — a lighthouse with a resident ghost, a castle with a moat of soup — give them the full listing treatment, and share them. **Every listing is fictional.** The site never takes payments, never collects card details and never creates real reservations.
+A parody accommodation marketplace. People invent ridiculous places to stay, give them the full listing treatment, and share them. **Every listing is fictional.** The site never takes payments, never collects card details and never creates real reservations.
 
 **Live site:** [accommodation-dog.vercel.app](https://accommodation-dog.vercel.app)
 
