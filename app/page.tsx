@@ -28,7 +28,7 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
           Unreal stays. <span className="text-brand">Unbelievable experiences.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
-          Castles, lighthouses, treehouses and places you won&apos;t find anywhere else. Find your next unforgettable
+          Crosbies, Sandays, Swifts, Waverlies, Ferntrees, Sheringhams, Perevils and places you won&apos;t find anywhere else. Find your next unforgettable
           stay.
         </p>
         <div className="mt-8">
