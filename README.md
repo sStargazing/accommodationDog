@@ -23,72 +23,13 @@ A parody accommodation marketplace. People invent ridiculous places to stay, giv
 - **React Hook Form** and **Zod** for forms and validation
 - **Vitest** and **PGlite** for unit and database tests, **Playwright** for end-to-end tests
 
-## Running it locally
-
-### 1. Install
-
-Requires Node.js 20.9 or newer.
-
-```bash
-npm install
-```
-
-### 2. Create a Supabase project
-
-1. Create a project at [supabase.com](https://supabase.com/dashboard).
-2. Apply the schema by running each file in `supabase/migrations/` **in filename order** — paste each into the **SQL Editor** as a new query, or use the CLI:
-   ```bash
-   npx supabase login
-   npx supabase link --project-ref <project-ref>
-   npx supabase db push
-   ```
-3. Under **Authentication → URL Configuration**, set the **Site URL** to `http://localhost:3000` and add `http://localhost:3000/**` to **Redirect URLs**.
-
-### 3. Configure environment variables
-
-```bash
-cp .env.example .env.local
-```
-
-| Variable | Where to find it |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → Data API |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → Project Settings → API Keys (publishable key, or the legacy `anon` key) |
-| `NEXT_PUBLIC_SITE_URL` | The site's public URL, no trailing slash (`http://localhost:3000` locally) |
-
-The publishable key is safe to expose: Row Level Security protects the data. Never put the Supabase **secret / service_role** key in a `NEXT_PUBLIC_` variable.
-
-### 4. Start the dev server
-
-```bash
-npm run dev
-```
-
-Open http://localhost:3000.
-
-### 5. Add sample data (optional)
-
-The seed script creates 12 fictional listings with photos, 16 fictional users with dog avatars, reviews and favourites. It needs the project's **secret key** in `.env.local`:
-
-```
-SUPABASE_SECRET_KEY=sb_secret_...
-```
-
-This key bypasses Row Level Security, so it is only read by the seed script on your machine — never by the app. Don't give it a `NEXT_PUBLIC_` prefix.
-
-```bash
-npm run seed              # skips if sample data already exists
-npm run seed -- --reset   # removes previous sample data first
-```
-
-Sample users have `@seed.accommodationdog.invalid` emails and random passwords, so nobody can log in as them.
-
 ## Deploying to Vercel
 
-1. In [Vercel](https://vercel.com/new), import the repository. The Next.js preset works as is.
-2. Add the environment variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. `NEXT_PUBLIC_SITE_URL` is optional: without it, the Vercel production URL is used. Don't add the secret key; the app doesn't use it.
-3. Deploy. The build prerenders popular listing pages, so the Supabase variables must be available at build time.
-4. In Supabase, under **Authentication → URL Configuration**, set the **Site URL** to the production URL and add `https://<your-domain>/**` to **Redirect URLs**.
+1. Create a project at [supabase.com](https://supabase.com/dashboard) and run each file in `supabase/migrations/` in filename order in the **SQL Editor**.
+2. In [Vercel](https://vercel.com/new), import the repository. The Next.js preset works as is.
+3. Add the environment variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. `NEXT_PUBLIC_SITE_URL` is optional: without it, the Vercel production URL is used. Don't add the secret key; the app doesn't use it.
+4. Deploy. The build prerenders popular listing pages, so the Supabase variables must be available at build time.
+5. In Supabase, under **Authentication → URL Configuration**, set the **Site URL** to the production URL and add `https://<your-domain>/**` to **Redirect URLs**.
 
 Supabase's built-in email sender only allows a few emails per hour. For anything beyond testing, configure custom SMTP under **Authentication → Emails**.
 
@@ -111,7 +52,7 @@ select id from public.profiles where username = 'their_username';
 | `npm run typecheck` | Generate route types, then type-check |
 | `npm test` | Unit tests and database tests (no Docker needed) |
 | `npm run test:e2e` | End-to-end tests in Google Chrome against a production build |
-| `npm run seed` | Add sample data (see above) |
+| `npm run seed` | Add sample listings, users and reviews (needs `SUPABASE_SECRET_KEY`) |
 
 **Database tests** (`supabase/tests/`) run the real migrations in [PGlite](https://pglite.dev), an in-process Postgres, with small stand-ins for Supabase's `auth` and `storage` schemas. They check ownership rules, permissions, constraints, rate limits, rating and favourite counts, and moderation access.
 
